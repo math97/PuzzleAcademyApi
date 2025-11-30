@@ -15,8 +15,8 @@ model Player {
   puuid         String   @unique
   gameName      String
   tagLine       String
-  summonerLevel Int
-  profileIconId Int
+  summonerLevel Int?
+  profileIconId Int?
   tier          String?
   rank          String?
   region        String
