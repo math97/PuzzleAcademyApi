@@ -1,5 +1,7 @@
 import { PlayersRepository } from '@/domain/league/application/repositories/players-repository';
 import { Player } from '@/domain/league/enterprise/entities/player';
+import { PaginationParams } from '@/core/repositories/pagination-params';
+import { PaginatedResult } from '@/core/repositories/paginated-result';
 
 export class InMemoryPlayersRepository implements PlayersRepository {
     public items: Player[] = [];
@@ -32,5 +34,20 @@ export class InMemoryPlayersRepository implements PlayersRepository {
         }
 
         return player;
+    }
+
+    async findAll({ page, limit }: PaginationParams): Promise<PaginatedResult<Player>> {
+        const total = this.items.length;
+        const lastPage = Math.ceil(total / limit);
+        const data = this.items.slice((page - 1) * limit, page * limit);
+
+        return {
+            data,
+            meta: {
+                total,
+                page,
+                lastPage,
+            },
+        };
     }
 }

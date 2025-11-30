@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PlayersRepository } from '@/domain/league/application/repositories/players-repository';
+import { PaginationParams } from '@/core/repositories/pagination-params';
+import { PaginatedResult } from '@/core/repositories/paginated-result';
 import { Player } from '@/domain/league/enterprise/entities/player';
 import { PrismaService } from '../prisma.service';
 import { PrismaPlayerMapper } from '../mappers/prisma-player-mapper';
@@ -54,5 +56,29 @@ export class PrismaPlayerRepository implements PlayersRepository {
         }
 
         return PrismaPlayerMapper.toDomain(player);
+    }
+
+    async findAll({ page, limit }: PaginationParams): Promise<PaginatedResult<Player>> {
+        const [total, players] = await Promise.all([
+            this.prisma.player.count(),
+            this.prisma.player.findMany({
+                skip: (page - 1) * limit,
+                take: limit,
+                orderBy: {
+                    createdAt: 'desc',
+                },
+            }),
+        ]);
+
+        const lastPage = Math.ceil(total / limit);
+
+        return {
+            data: players.map(PrismaPlayerMapper.toDomain),
+            meta: {
+                total,
+                page,
+                lastPage,
+            },
+        };
     }
 }
