@@ -1,22 +1,22 @@
 import { Body, ConflictException, Controller, NotFoundException, Post } from '@nestjs/common';
 import { AddPlayerUseCase } from '@/domain/league/application/use-cases/add-player';
 import { PlayerPresenter } from '../presenters/player.presenter';
-import { z } from 'zod';
+import { CreatePlayerDto } from '../dtos/create-player.dto';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { PlayerResponseDto } from '../dtos/player-response.dto';
 
-const createPlayerBodySchema = z.object({
-    gameName: z.string(),
-    tagLine: z.string(),
-});
-
-type CreatePlayerBodySchema = z.infer<typeof createPlayerBodySchema>;
-
+@ApiTags('players')
 @Controller('/players')
 export class CreatePlayerController {
     constructor(private addPlayer: AddPlayerUseCase) { }
 
     @Post()
-    async handle(@Body() body: CreatePlayerBodySchema) {
-        const { gameName, tagLine } = createPlayerBodySchema.parse(body);
+    @ApiOperation({ summary: 'Create a new player' })
+    @ApiResponse({ status: 201, description: 'The player has been successfully created.', type: PlayerResponseDto })
+    @ApiResponse({ status: 404, description: 'Summoner not found.' })
+    @ApiResponse({ status: 409, description: 'Player already exists.' })
+    async handle(@Body() body: CreatePlayerDto) {
+        const { gameName, tagLine } = body;
 
         try {
             const { player } = await this.addPlayer.execute({
