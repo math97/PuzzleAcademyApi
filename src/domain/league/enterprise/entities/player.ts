@@ -64,4 +64,9 @@ export class Player extends Entity<PlayerProps> {
 
         return player;
     }
+
+    updateDetails(details: { profileIconId: number; summonerLevel: number }) {
+        this.props.profileIconId = details.profileIconId;
+        this.props.summonerLevel = details.summonerLevel;
+    }
 }

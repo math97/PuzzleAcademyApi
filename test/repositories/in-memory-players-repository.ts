@@ -17,4 +17,20 @@ export class InMemoryPlayersRepository implements PlayersRepository {
 
         return player;
     }
+
+    async save(player: Player): Promise<void> {
+        const itemIndex = this.items.findIndex((item) => item.id === player.id);
+
+        this.items[itemIndex] = player;
+    }
+
+    async findByNameAndTag(name: string, tag: string): Promise<Player | null> {
+        const player = this.items.find((item) => item.name === name && item.tag === tag);
+
+        if (!player) {
+            return null;
+        }
+
+        return player;
+    }
 }

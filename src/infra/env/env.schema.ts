@@ -5,9 +5,12 @@ export const envSchema = z.object({
   PORT: z.coerce.number().default(3000),
   RIOT_REGION: z.enum(['BR1', 'EUN1', 'EUW1']),
   RIOT_API_KEY: z.string(),
-  RIOT_URL: z.enum([
+  RIOT_URL_ACCOUNT: z.enum([
     'americas.api.riotgames.com',
     'europe.api.riotgames.com',
+  ]),
+  RIOT_URL_SUMMONER: z.enum([
+    'br1.api.riotgames.com',
   ]),
 });
 

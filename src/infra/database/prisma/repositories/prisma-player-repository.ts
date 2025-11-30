@@ -16,10 +16,36 @@ export class PrismaPlayerRepository implements PlayersRepository {
         });
     }
 
+    async save(player: Player): Promise<void> {
+        const data = PrismaPlayerMapper.toPrisma(player);
+
+        await this.prisma.player.update({
+            where: {
+                id: data.id,
+            },
+            data,
+        });
+    }
+
     async findByPuuid(puuid: string): Promise<Player | null> {
         const player = await this.prisma.player.findUnique({
             where: {
                 puuid,
+            },
+        });
+
+        if (!player) {
+            return null;
+        }
+
+        return PrismaPlayerMapper.toDomain(player);
+    }
+
+    async findByNameAndTag(name: string, tag: string): Promise<Player | null> {
+        const player = await this.prisma.player.findFirst({
+            where: {
+                gameName: name,
+                tagLine: tag,
             },
         });
 

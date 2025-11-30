@@ -4,9 +4,12 @@ import { AddPlayerUseCase } from '@/domain/league/application/use-cases/add-play
 import { DatabaseModule } from '../database/database.module';
 import { RiotModule } from '../riot/riot.module';
 
+import { GetSummonerDetailsController } from './controllers/get-summoner-details.controller';
+import { GetSummonerDetailsUseCase } from '@/domain/league/application/use-cases/get-summoner-details';
+
 @Module({
     imports: [DatabaseModule, RiotModule],
-    controllers: [CreatePlayerController],
-    providers: [AddPlayerUseCase],
+    controllers: [CreatePlayerController, GetSummonerDetailsController],
+    providers: [AddPlayerUseCase, GetSummonerDetailsUseCase],
 })
 export class HttpModule { }

@@ -1,20 +1,22 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { RiotApiGateway, RiotSummonerDTO } from '@/domain/league/application/gateways/riot-api-gateway';
+import { RiotApiGateway, RiotSummonerDTO, RiotSummonerDetailsDTO } from '@/domain/league/application/gateways/riot-api-gateway';
 import { EnvService } from '@/infra/env/env.service';
 
 @Injectable()
 export class RiotService implements RiotApiGateway {
     private apiKey: string;
-    private riotUrl: string;
+    private riotAccountUrl: string;
+    private riotSummonerUrl: string;
 
     constructor(private readonly envService: EnvService) {
         this.apiKey = this.envService.get('RIOT_API_KEY');
-        this.riotUrl = this.envService.get('RIOT_URL') || 'americas.api.riotgames.com';
+        this.riotAccountUrl = this.envService.get('RIOT_URL_ACCOUNT');
+        this.riotSummonerUrl = this.envService.get('RIOT_URL_SUMMONER');
     }
 
     async getSummoner(name: string, tag: string): Promise<RiotSummonerDTO | null> {
         try {
-            const accountUrl = `https://${this.riotUrl}/riot/account/v1/accounts/by-riot-id/${name}/${tag}`;
+            const accountUrl = `https://${this.riotAccountUrl}/riot/account/v1/accounts/by-riot-id/${name}/${tag}`;
             const accountResponse = await fetch(accountUrl, {
                 method: 'GET',
                 headers: {
@@ -40,6 +42,35 @@ export class RiotService implements RiotApiGateway {
             };
         } catch (error) {
             throw new InternalServerErrorException('Error fetching summoner');
+        }
+    }
+
+    async getSummonerDetails(puuid: string): Promise<RiotSummonerDetailsDTO | null> {
+        try {
+            const summonerUrl = `https://${this.riotSummonerUrl}/lol/summoner/v4/summoners/by-puuid/${puuid}`;
+            const summonerResponse = await fetch(summonerUrl, {
+                method: 'GET',
+                headers: {
+                    'X-Riot-Token': this.apiKey,
+                },
+            });
+
+            if (summonerResponse.status === 404) {
+                return null;
+            }
+
+            if (!summonerResponse.ok) {
+                throw new InternalServerErrorException(`Riot API error: ${summonerResponse.statusText}`);
+            }
+
+            const summonerData = await summonerResponse.json();
+
+            return {
+                profileIconId: summonerData.profileIconId,
+                summonerLevel: summonerData.summonerLevel,
+            };
+        } catch (error) {
+            throw new InternalServerErrorException('Error fetching summoner details');
         }
     }
 }
