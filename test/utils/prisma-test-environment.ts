@@ -1,7 +1,10 @@
+import { config } from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import { execSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import 'dotenv/config';
+
+config({ path: '.env', override: true });
+config({ path: '.env.test', override: true });
 
 export class PrismaTestEnvironment {
     private schema: string;
