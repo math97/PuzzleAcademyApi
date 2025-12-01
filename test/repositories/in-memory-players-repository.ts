@@ -60,4 +60,7 @@ export class InMemoryPlayersRepository implements PlayersRepository {
             },
         };
     }
+    async findAllIds(): Promise<string[]> {
+        return this.items.map((item) => item.id.toString());
+    }
 }

@@ -13,10 +13,12 @@ import { GetPlayerByIdUseCase } from '@/domain/league/application/use-cases/get-
 
 import { LoadPlayerStatsController } from './controllers/load-player-stats.controller';
 import { LoadPlayerStatsUseCase } from '@/domain/league/application/use-cases/load-player-stats';
+import { LoadAllPlayersStatsController } from './controllers/load-all-players-stats.controller';
+import { LoadAllPlayersStatsUseCase } from '@/domain/league/application/use-cases/load-all-players-stats';
 
 @Module({
     imports: [DatabaseModule, RiotModule],
-    controllers: [CreatePlayerController, GetSummonerDetailsController, FetchAllPlayersController, GetPlayerByIdController, LoadPlayerStatsController],
-    providers: [AddPlayerUseCase, GetSummonerDetailsUseCase, FetchAllPlayersUseCase, GetPlayerByIdUseCase, LoadPlayerStatsUseCase],
+    controllers: [CreatePlayerController, GetSummonerDetailsController, FetchAllPlayersController, GetPlayerByIdController, LoadPlayerStatsController, LoadAllPlayersStatsController],
+    providers: [AddPlayerUseCase, GetSummonerDetailsUseCase, FetchAllPlayersUseCase, GetPlayerByIdUseCase, LoadPlayerStatsUseCase, LoadAllPlayersStatsUseCase],
 })
 export class HttpModule { }

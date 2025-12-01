@@ -95,4 +95,13 @@ export class PrismaPlayerRepository implements PlayersRepository {
             },
         };
     }
+    async findAllIds(): Promise<string[]> {
+        const players = await this.prisma.player.findMany({
+            select: {
+                id: true,
+            },
+        });
+
+        return players.map((player) => player.id);
+    }
 }

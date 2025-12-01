@@ -45,6 +45,7 @@ export class LoadPlayerStatsUseCase {
                 const totalPoints = Snapshot.calculateTotalPoints(
                     entry.tier,
                     entry.rank,
+                    entry.leaguePoints,
                 );
 
                 const snapshot = Snapshot.create({

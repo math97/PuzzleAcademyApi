@@ -71,7 +71,7 @@ export class Snapshot extends Entity<SnapshotProps> {
         return snapshot;
     }
 
-    static calculateTotalPoints(tier: string, rank: string): number {
+    static calculateTotalPoints(tier: string, rank: string, leaguePoints: number): number {
         const tierPoints: Record<string, number> = {
             IRON: 0,
             BRONZE: 400,
@@ -92,6 +92,6 @@ export class Snapshot extends Entity<SnapshotProps> {
         const tierValue = tierPoints[tier] ?? 0;
         const rankValue = rankPoints[rank] ?? 0;
 
-        return tierValue + rankValue;
+        return tierValue + rankValue + leaguePoints;
     }
 }
