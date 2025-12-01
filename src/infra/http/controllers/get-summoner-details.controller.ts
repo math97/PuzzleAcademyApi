@@ -11,6 +11,8 @@ const getSummonerDetailsQuerySchema = z.object({
 
 type GetSummonerDetailsQuerySchema = z.infer<typeof getSummonerDetailsQuerySchema>;
 
+import { PlayerPresenter } from '../presenters/player-presenter';
+
 @ApiTags('players')
 @Controller('/players/details')
 export class GetSummonerDetailsController {
@@ -28,10 +30,14 @@ export class GetSummonerDetailsController {
         const { gameName, tag } = query;
 
         try {
-            await this.getSummonerDetailsUseCase.execute({
+            const player = await this.getSummonerDetailsUseCase.execute({
                 gameName,
                 tag,
             });
+
+            return {
+                data: PlayerPresenter.toHTTP(player),
+            };
         } catch (error) {
             if (error instanceof NotFoundException) {
                 throw new NotFoundException(error.message);

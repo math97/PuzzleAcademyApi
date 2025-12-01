@@ -49,6 +49,8 @@ describe('Get Summoner Details (E2E)', () => {
             });
 
         expect(response.statusCode).toBe(200);
+        expect(response.body.data.profileIconId).toBeTruthy();
+        expect(response.body.data.summonerLevel).toBeTruthy();
 
         const playerOnDb = await prisma.player.findUnique({
             where: {

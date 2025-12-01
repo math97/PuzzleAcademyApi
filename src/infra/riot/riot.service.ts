@@ -41,7 +41,7 @@ export class RiotService implements RiotApiGateway {
                 tagLine: accountData.tagLine,
             };
         } catch (error) {
-            throw new InternalServerErrorException('Error fetching summoner');
+            throw new InternalServerErrorException(`Error fetching summoner: ${error}`);
         }
     }
 

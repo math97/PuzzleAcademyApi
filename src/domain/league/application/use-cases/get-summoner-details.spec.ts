@@ -1,6 +1,7 @@
 import { GetSummonerDetailsUseCase } from './get-summoner-details';
 import { InMemoryPlayersRepository } from 'test/repositories/in-memory-players-repository';
 import { Player } from '@/domain/league/enterprise/entities/player';
+import { makePlayer } from 'test/factories/player-factory';
 import { RiotApiGateway } from '../gateways/riot-api-gateway';
 import { NotFoundException } from '@nestjs/common';
 
@@ -31,21 +32,21 @@ describe('Get Summoner Details', () => {
     });
 
     it('should be able to get summoner details', async () => {
-        const player = Player.create({
-            name: 'Faker',
-            tag: 'SKT',
+        const player = makePlayer({
+            name: 'Test',
+            tag: 'BR1',
             riotPuiid: 'valid-puuid',
         });
-
         await inMemoryPlayersRepository.insert(player);
 
-        await sut.execute({
-            gameName: 'Faker',
-            tag: 'SKT',
+        const result = await sut.execute({
+            gameName: 'Test',
+            tag: 'BR1',
         });
 
-        expect(inMemoryPlayersRepository.items[0].profileIconId).toEqual(1234);
-        expect(inMemoryPlayersRepository.items[0].summonerLevel).toEqual(100);
+        expect(result).toBeTruthy();
+        expect(inMemoryPlayersRepository.items[0].summonerLevel).toBe(100);
+        expect(inMemoryPlayersRepository.items[0].profileIconId).toBe(1234);
     });
 
     it('should not be able to get details of a non-existent player', async () => {
