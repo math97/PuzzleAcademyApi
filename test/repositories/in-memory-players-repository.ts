@@ -20,6 +20,16 @@ export class InMemoryPlayersRepository implements PlayersRepository {
         return player;
     }
 
+    async findById(id: string): Promise<Player | null> {
+        const player = this.items.find((item) => item.id.toString() === id);
+
+        if (!player) {
+            return null;
+        }
+
+        return player;
+    }
+
     async save(player: Player): Promise<void> {
         const itemIndex = this.items.findIndex((item) => item.id === player.id);
 

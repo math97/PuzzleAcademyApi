@@ -43,6 +43,20 @@ export class PrismaPlayerRepository implements PlayersRepository {
         return PrismaPlayerMapper.toDomain(player);
     }
 
+    async findById(id: string): Promise<Player | null> {
+        const player = await this.prisma.player.findUnique({
+            where: {
+                id,
+            },
+        });
+
+        if (!player) {
+            return null;
+        }
+
+        return PrismaPlayerMapper.toDomain(player);
+    }
+
     async findByNameAndTag(name: string, tag: string): Promise<Player | null> {
         const player = await this.prisma.player.findFirst({
             where: {
