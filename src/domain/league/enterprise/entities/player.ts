@@ -69,4 +69,14 @@ export class Player extends Entity<PlayerProps> {
         this.props.profileIconId = details.profileIconId;
         this.props.summonerLevel = details.summonerLevel;
     }
+
+    updateStats(stats: {
+        tier: string;
+        rank: string;
+        leaguePoints: number;
+    }) {
+        this.props.tier = stats.tier;
+        this.props.rank = stats.rank;
+        this.props.leaguePoints = stats.leaguePoints;
+    }
 }

@@ -11,9 +11,12 @@ import { GetSummonerDetailsUseCase } from '@/domain/league/application/use-cases
 import { FetchAllPlayersUseCase } from '@/domain/league/application/use-cases/fetch-all-players';
 import { GetPlayerByIdUseCase } from '@/domain/league/application/use-cases/get-player-by-id';
 
+import { LoadPlayerStatsController } from './controllers/load-player-stats.controller';
+import { LoadPlayerStatsUseCase } from '@/domain/league/application/use-cases/load-player-stats';
+
 @Module({
     imports: [DatabaseModule, RiotModule],
-    controllers: [CreatePlayerController, GetSummonerDetailsController, FetchAllPlayersController, GetPlayerByIdController],
-    providers: [AddPlayerUseCase, GetSummonerDetailsUseCase, FetchAllPlayersUseCase, GetPlayerByIdUseCase],
+    controllers: [CreatePlayerController, GetSummonerDetailsController, FetchAllPlayersController, GetPlayerByIdController, LoadPlayerStatsController],
+    providers: [AddPlayerUseCase, GetSummonerDetailsUseCase, FetchAllPlayersUseCase, GetPlayerByIdUseCase, LoadPlayerStatsUseCase],
 })
 export class HttpModule { }

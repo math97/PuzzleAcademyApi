@@ -23,5 +23,25 @@ model Player {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  snapshots     Snapshot[]
+
   @@map("players")
+}
+
+model Snapshot {
+  id           String   @id @default(uuid())
+  playerId     String
+  queueType    String
+  tier         String
+  rank         String
+  leaguePoints Int
+  wins         Int
+  losses       Int
+  hotStreak    Boolean
+  totalPoints  Int
+  createdAt    DateTime @default(now())
+
+  player Player @relation(fields: [playerId], references: [id])
+
+  @@map("snapshots")
 }

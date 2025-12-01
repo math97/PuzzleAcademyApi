@@ -73,4 +73,25 @@ export class RiotService implements RiotApiGateway {
             throw new InternalServerErrorException('Error fetching summoner details');
         }
     }
+
+    async getLeagueEntries(puuid: string): Promise<any[]> {
+        try {
+            const url = `https://${this.riotSummonerUrl}/lol/league/v4/entries/by-puuid/${puuid}`;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'X-Riot-Token': this.apiKey,
+                },
+            });
+
+            if (!response.ok) {
+                throw new InternalServerErrorException(`Riot API error: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            throw new InternalServerErrorException(`Error fetching league entries: ${error}`);
+        }
+    }
 }
