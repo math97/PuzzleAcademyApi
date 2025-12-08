@@ -11,13 +11,23 @@ import { PrismaSnapshotMapper } from '@/infra/database/prisma/mappers/prisma-sna
 import { PrismaSnapshotRepository } from '@/infra/database/prisma/repositories/prisma-snapshot-repository';
 import { SnapshotRepository } from '@/domain/league/application/repositories/snapshot-repository';
 
+import { ConfigModule } from '@nestjs/config';
+import { envSchema } from '@/infra/env/env.schema';
+
 describe('[GET] /players/:id', () => {
     let app: INestApplication;
     let prisma: PrismaService;
 
     beforeAll(async () => {
         const moduleRef = await Test.createTestingModule({
-            imports: [DatabaseModule, HttpModule],
+            imports: [
+                ConfigModule.forRoot({
+                    validate: (env) => envSchema.parse(env),
+                    isGlobal: true,
+                }),
+                DatabaseModule,
+                HttpModule,
+            ],
             providers: [
                 {
                     provide: SnapshotRepository,
@@ -67,7 +77,7 @@ describe('[GET] /players/:id', () => {
             .get(`/players/${player.id.toString()}`)
             .query({
                 from: date.toISOString().split('T')[0],
-                to: date.toISOString().split('T')[0],
+                to: new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split('T')[0],
             })
             .expect(200);
 

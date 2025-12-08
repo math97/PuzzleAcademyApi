@@ -3,8 +3,8 @@ import { GetPlayerByIdUseCase } from './get-player-by-id';
 import { InMemoryPlayersRepository } from 'test/repositories/in-memory-players-repository';
 import { InMemorySnapshotRepository } from 'test/repositories/in-memory-snapshot-repository';
 import { makePlayer } from 'test/factories/player-factory';
-import { makeSnapshot } from 'test/factories/snapshot-factory';
 import { UniqueEntityId } from '@/core/entities/unique-entity-id';
+import { makeSnapshot } from 'test/factories/snapshot-factory';
 
 let inMemoryPlayersRepository: InMemoryPlayersRepository;
 let inMemorySnapshotRepository: InMemorySnapshotRepository;

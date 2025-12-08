@@ -1,57 +1,94 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { AppModule } from '@/app.module';
-import { PlayerFactory } from './factories/player-factory';
-import { DatabaseModule } from '@/infra/database/database.module';
 import request from 'supertest';
+import { PrismaService } from '@/infra/database/prisma/prisma.service';
+import { HttpModule } from '@/infra/http/http.module';
+import { DatabaseModule } from '@/infra/database/database.module';
+import { makePlayer } from 'test/factories/player-factory';
+import { makeSnapshot } from 'test/factories/snapshot-factory';
+import { PrismaPlayerMapper } from '@/infra/database/prisma/mappers/prisma-player-mapper';
+import { PrismaSnapshotMapper } from '@/infra/database/prisma/mappers/prisma-snapshot-mapper';
+import { PrismaSnapshotRepository } from '@/infra/database/prisma/repositories/prisma-snapshot-repository';
+import { SnapshotRepository } from '@/domain/league/application/repositories/snapshot-repository';
 
-describe('Fetch All Players (E2E)', () => {
+import { ConfigModule } from '@nestjs/config';
+import { envSchema } from '@/infra/env/env.schema';
+
+describe('[GET] /players', () => {
     let app: INestApplication;
-    let playerFactory: PlayerFactory;
+    let prisma: PrismaService;
 
     beforeAll(async () => {
         const moduleRef = await Test.createTestingModule({
-            imports: [AppModule, DatabaseModule],
-            providers: [PlayerFactory],
+            imports: [
+                ConfigModule.forRoot({
+                    validate: (env) => envSchema.parse(env),
+                    isGlobal: true,
+                }),
+                DatabaseModule,
+                HttpModule,
+            ],
+            providers: [
+                {
+                    provide: SnapshotRepository,
+                    useClass: PrismaSnapshotRepository,
+                }
+            ]
         }).compile();
 
         app = moduleRef.createNestApplication();
-        playerFactory = moduleRef.get(PlayerFactory);
+        prisma = moduleRef.get(PrismaService);
 
         await app.init();
     });
 
-    test('[GET] /players', async () => {
-        for (let i = 1; i <= 22; i++) {
-            await playerFactory.makePrismaPlayer({
-                name: `Player ${i}`,
-                tag: 'BR1',
-                riotPuiid: `puuid-${i}`,
-            });
+    afterAll(async () => {
+        if (app) {
+            await app.close();
         }
+    });
+
+    test('should return paginated players with stats and snapshots', async () => {
+        const player = makePlayer();
+        await prisma.player.create({
+            data: PrismaPlayerMapper.toPrisma(player),
+        });
+
+        const date = new Date();
+        const snapshot1 = makeSnapshot({
+            playerId: player.id.toString(),
+            totalPoints: 100,
+            createdAt: new Date(date.setHours(10, 0, 0, 0)),
+        });
+        const snapshot2 = makeSnapshot({
+            playerId: player.id.toString(),
+            totalPoints: 120,
+            createdAt: new Date(date.setHours(11, 0, 0, 0)),
+        });
+
+        await prisma.snapshot.createMany({
+            data: [
+                PrismaSnapshotMapper.toPrisma(snapshot1),
+                PrismaSnapshotMapper.toPrisma(snapshot2),
+            ],
+        });
 
         const response = await request(app.getHttpServer())
             .get('/players')
             .query({
-                page: 2,
+                page: 1,
                 limit: 10,
-            });
+                from: new Date().toISOString().split('T')[0],
+                to: new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split('T')[0],
+            })
+            .expect(200);
 
-        expect(response.statusCode).toBe(200);
-        expect(response.body.data).toHaveLength(10);
-        expect(response.body.meta.total).toBe(22);
-        expect(response.body.meta.page).toBe(2);
-        expect(response.body.meta.lastPage).toBe(3);
-    });
-
-    test('[GET] /players (defaults)', async () => {
-        const response = await request(app.getHttpServer())
-            .get('/players');
-
-        expect(response.statusCode).toBe(200);
-        expect(response.body.data).toHaveLength(20);
-        expect(response.body.meta.total).toBe(22);
-        expect(response.body.meta.page).toBe(1);
-        expect(response.body.meta.lastPage).toBe(2);
+        expect(response.body.data).toHaveLength(1);
+        expect(response.body.data[0].player.id).toBe(player.id.toString());
+        expect(response.body.data[0].snapshots).toHaveLength(2);
+        expect(response.body.data[0].stats).toEqual({
+            pointsLostOrWon: 20,
+            pointsLostOrWonLifetime: 20,
+        });
     });
 });
