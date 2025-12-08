@@ -1,22 +1,91 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PlayersRepository } from '../repositories/players-repository';
+import { PlayersRepository } from '@/domain/league/application/repositories/players-repository';
 import { Player } from '@/domain/league/enterprise/entities/player';
+import { SnapshotRepository } from '@/domain/league/application/repositories/snapshot-repository';
+import { Snapshot } from '@/domain/league/enterprise/entities/snapshot';
 
 interface GetPlayerByIdRequest {
     id: string;
+    from?: Date;
+    to?: Date;
+}
+
+interface PlayerStats {
+    pointsLostOrWon: number;
+    pointsLostOrWonLifetime: number;
+}
+
+interface GetPlayerByIdResponse {
+    player: Player;
+    snapshots: Snapshot[];
+    stats: PlayerStats;
 }
 
 @Injectable()
 export class GetPlayerByIdUseCase {
-    constructor(private playersRepository: PlayersRepository) { }
+    constructor(
+        private playersRepository: PlayersRepository,
+        private snapshotRepository: SnapshotRepository,
+    ) { }
 
-    async execute({ id }: GetPlayerByIdRequest): Promise<Player> {
+    async execute({ id, from, to }: GetPlayerByIdRequest): Promise<GetPlayerByIdResponse> {
         const player = await this.playersRepository.findById(id);
 
         if (!player) {
             throw new NotFoundException('Player not found');
         }
 
-        return player;
+        const { startDate, endDate } = this.getDateRange(from, to);
+
+        const snapshots = await this.snapshotRepository.findByPlayerIdAndDateRange(id, startDate, endDate);
+        const firstEverSnapshot = await this.snapshotRepository.findFirstByPlayerId(id);
+
+        const stats = this.calculateStats(snapshots, firstEverSnapshot);
+
+        return {
+            player,
+            snapshots,
+            stats,
+        };
+    }
+
+    private getDateRange(from?: Date, to?: Date): { startDate: Date; endDate: Date } {
+        const now = new Date();
+
+        if (from && to) {
+            return { startDate: from, endDate: to };
+        }
+
+        if (from) {
+            return { startDate: from, endDate: now };
+        }
+
+        const startOfDay = new Date(now);
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const endOfDay = new Date(now);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        return { startDate: startOfDay, endDate: endOfDay };
+    }
+
+    private calculateStats(snapshots: Snapshot[], firstEverSnapshot: Snapshot | null): PlayerStats {
+        let pointsLostOrWon = 0;
+        let pointsLostOrWonLifetime = 0;
+
+        if (snapshots.length > 0) {
+            const first = snapshots[0];
+            const last = snapshots[snapshots.length - 1];
+            pointsLostOrWon = last.totalPoints - first.totalPoints;
+
+            if (firstEverSnapshot) {
+                pointsLostOrWonLifetime = last.totalPoints - firstEverSnapshot.totalPoints;
+            }
+        }
+
+        return {
+            pointsLostOrWon,
+            pointsLostOrWonLifetime,
+        };
     }
 }

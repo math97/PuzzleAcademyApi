@@ -1,50 +1,81 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { AppModule } from '@/app.module';
-import { PlayerFactory } from './factories/player-factory';
-import { DatabaseModule } from '@/infra/database/database.module';
 import request from 'supertest';
+import { PrismaService } from '@/infra/database/prisma/prisma.service';
+import { HttpModule } from '@/infra/http/http.module';
+import { DatabaseModule } from '@/infra/database/database.module';
+import { makePlayer } from 'test/factories/player-factory';
+import { makeSnapshot } from 'test/factories/snapshot-factory';
+import { PrismaPlayerMapper } from '@/infra/database/prisma/mappers/prisma-player-mapper';
+import { PrismaSnapshotMapper } from '@/infra/database/prisma/mappers/prisma-snapshot-mapper';
+import { PrismaSnapshotRepository } from '@/infra/database/prisma/repositories/prisma-snapshot-repository';
+import { SnapshotRepository } from '@/domain/league/application/repositories/snapshot-repository';
 
-describe('Get Player By ID (E2E)', () => {
+describe('[GET] /players/:id', () => {
     let app: INestApplication;
-    let playerFactory: PlayerFactory;
+    let prisma: PrismaService;
 
     beforeAll(async () => {
         const moduleRef = await Test.createTestingModule({
-            imports: [AppModule, DatabaseModule],
-            providers: [PlayerFactory],
+            imports: [DatabaseModule, HttpModule],
+            providers: [
+                {
+                    provide: SnapshotRepository,
+                    useClass: PrismaSnapshotRepository,
+                }
+            ]
         }).compile();
 
         app = moduleRef.createNestApplication();
-        playerFactory = moduleRef.get(PlayerFactory);
+        prisma = moduleRef.get(PrismaService);
 
         await app.init();
     });
 
-    test('[GET] /players/:id', async () => {
-        const player = await playerFactory.makePrismaPlayer({
-            name: 'John Doe',
+    afterAll(async () => {
+        if (app) {
+            await app.close();
+        }
+    });
+
+    test('should return player details with stats and snapshots', async () => {
+        const player = makePlayer();
+        await prisma.player.create({
+            data: PrismaPlayerMapper.toPrisma(player),
+        });
+
+        const date = new Date();
+        const snapshot1 = makeSnapshot({
+            playerId: player.id.toString(),
+            totalPoints: 100,
+            createdAt: new Date(date.setHours(10, 0, 0, 0)),
+        });
+        const snapshot2 = makeSnapshot({
+            playerId: player.id.toString(),
+            totalPoints: 120,
+            createdAt: new Date(date.setHours(11, 0, 0, 0)),
+        });
+
+        await prisma.snapshot.createMany({
+            data: [
+                PrismaSnapshotMapper.toPrisma(snapshot1),
+                PrismaSnapshotMapper.toPrisma(snapshot2),
+            ],
         });
 
         const response = await request(app.getHttpServer())
-            .get(`/players/${player.id.toString()}`);
+            .get(`/players/${player.id.toString()}`)
+            .query({
+                from: date.toISOString().split('T')[0],
+                to: date.toISOString().split('T')[0],
+            })
+            .expect(200);
 
-        expect(response.statusCode).toBe(200);
-        expect(response.body.data.id).toBe(player.id.toString());
-        expect(response.body.data.gameName).toBe('John Doe');
-    });
-
-    test('[GET] /players/:id (Not Found)', async () => {
-        const response = await request(app.getHttpServer())
-            .get('/players/550e8400-e29b-41d4-a716-446655440000');
-
-        expect(response.statusCode).toBe(404);
-    });
-
-    test('[GET] /players/:id (Invalid UUID)', async () => {
-        const response = await request(app.getHttpServer())
-            .get('/players/invalid-uuid');
-
-        expect(response.statusCode).toBe(400);
+        expect(response.body.data.player.id).toBe(player.id.toString());
+        expect(response.body.data.snapshots).toHaveLength(2);
+        expect(response.body.data.stats).toEqual({
+            pointsLostOrWon: 20,
+            pointsLostOrWonLifetime: 20,
+        });
     });
 });

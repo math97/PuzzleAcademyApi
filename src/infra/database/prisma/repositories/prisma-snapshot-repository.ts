@@ -15,4 +15,38 @@ export class PrismaSnapshotRepository implements SnapshotRepository {
             data,
         });
     }
+
+    async findByPlayerIdAndDateRange(playerId: string, from: Date, to: Date): Promise<Snapshot[]> {
+        const snapshots = await this.prisma.snapshot.findMany({
+            where: {
+                playerId,
+                createdAt: {
+                    gte: from,
+                    lte: to,
+                },
+            },
+            orderBy: {
+                createdAt: 'asc',
+            },
+        });
+
+        return snapshots.map(PrismaSnapshotMapper.toDomain);
+    }
+
+    async findFirstByPlayerId(playerId: string): Promise<Snapshot | null> {
+        const snapshot = await this.prisma.snapshot.findFirst({
+            where: {
+                playerId,
+            },
+            orderBy: {
+                createdAt: 'asc',
+            },
+        });
+
+        if (!snapshot) {
+            return null;
+        }
+
+        return PrismaSnapshotMapper.toDomain(snapshot);
+    }
 }
