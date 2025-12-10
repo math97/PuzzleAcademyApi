@@ -1,6 +1,5 @@
 import { GetSummonerDetailsUseCase } from './get-summoner-details';
 import { InMemoryPlayersRepository } from 'test/repositories/in-memory-players-repository';
-import { Player } from '@/domain/league/enterprise/entities/player';
 import { makePlayer } from 'test/factories/player-factory';
 import { RiotApiGateway } from '../gateways/riot-api-gateway';
 import { NotFoundException } from '@nestjs/common';
@@ -17,6 +16,9 @@ class FakeRiotApiGateway implements RiotApiGateway {
       };
     }
     return null;
+  }
+  async getLeagueEntries(puuid: string) {
+    return [];
   }
 }
 
