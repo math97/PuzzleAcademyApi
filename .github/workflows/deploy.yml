@@ -57,6 +57,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           envs: DATABASE_URL,RIOT_API_KEY,RIOT_REGION,RIOT_URL_ACCOUNT,RIOT_URL_SUMMONER,DOCKER_IMAGE_NAME,COMPOSE_FILE_CONTENT,APP_PORT
           script: |
+            set -e # Exit immediately if any command exits with a non-zero status
             cd /home/${{ secrets.VPS_USER }}/puzzle-api
             
             # Decode the compose file content
@@ -70,14 +71,17 @@ jobs:
             export DOCKER_IMAGE_NAME="$DOCKER_IMAGE_NAME"
             export APP_PORT="$APP_PORT"
 
+            echo "--- DEBUG: VERIFYING PRISMA FILES ---"
+            docker run --rm \
+              $DOCKER_IMAGE_NAME:latest \
+              ls -R prisma
+
             echo "--- STARTING PRISMA MIGRATION ---"
             docker run --rm \
               --network m2a_network \
               -e DATABASE_URL="$DATABASE_URL" \
               $DOCKER_IMAGE_NAME:latest \
-              npx prisma migrate deploy
-
-            
+              npx prisma migrate deploy || { echo 'Migration failed'; exit 1; }
             
             docker compose pull
             docker compose up -d
