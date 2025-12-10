@@ -14,4 +14,10 @@ services:
       RIOT_REGION: "${RIOT_REGION}"
       RIOT_URL_ACCOUNT: "${RIOT_URL_ACCOUNT}"
       RIOT_URL_SUMMONER: "${RIOT_URL_SUMMONER}"
+    networks:
+      - m2a_network
     restart: always
+
+networks:
+  m2a_network:
+    external: true
