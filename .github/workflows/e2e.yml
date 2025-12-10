@@ -33,7 +33,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
@@ -51,6 +51,12 @@ jobs:
 
       - name: Run E2E Tests
         run: pnpm run test:e2e
+        env:
+          DATABASE_URL: postgresql://user:password@localhost:5432/puzzle_academy_api?schema=public
+          RIOT_REGION: BR1
+          RIOT_API_KEY: ${{ secrets.RIOT_API_KEY }}
+          RIOT_URL_ACCOUNT: americas.api.riotgames.com
+          RIOT_URL_SUMMONER: br1.api.riotgames.com
       
       - name: Stop Containers
         if: always()

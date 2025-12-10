@@ -6,25 +6,12 @@ services:
     image: ${DOCKER_IMAGE_NAME}:latest
     container_name: puzzle_academy_api
     ports:
-      - "${PORT:-3000}:3000"
+      - "${PORT:-3001}:3001"
     environment:
       NODE_ENV: production
-      DATABASE_URL: "postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-puzzle_academy}"
+      DATABASE_URL: "${DATABASE_URL}"
       RIOT_API_KEY: "${RIOT_API_KEY}"
-    depends_on:
-      - postgres
+      RIOT_REGION: "${RIOT_REGION}"
+      RIOT_URL_ACCOUNT: "${RIOT_URL_ACCOUNT}"
+      RIOT_URL_SUMMONER: "${RIOT_URL_SUMMONER}"
     restart: always
-
-  postgres:
-    image: postgres:15-alpine
-    container_name: puzzle_academy_postgres
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
-      POSTGRES_DB: ${POSTGRES_DB:-puzzle_academy}
-    volumes:
-      - pg_data:/var/lib/postgresql/data
-    restart: always
-
-volumes:
-  pg_data:

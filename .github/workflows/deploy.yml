@@ -8,9 +8,11 @@ on:
 jobs:
   unit-tests:
     uses: ./.github/workflows/test.yml
+    secrets: inherit
 
   e2e-tests:
     uses: ./.github/workflows/e2e.yml
+    secrets: inherit
 
   build-and-deploy:
     needs: [unit-tests, e2e-tests]
@@ -32,29 +34,39 @@ jobs:
           push: true
           tags: ${{ vars.DOCKER_IMAGE_NAME }}:latest
 
+      - name: Prepare Docker Compose File
+        id: read_compose
+        run: |
+          COMPOSE_CONTENT=$(base64 < docker-compose.prod.yml | tr -d '\n')
+          echo "COMPOSE_FILE_CONTENT=$COMPOSE_CONTENT" >> $GITHUB_ENV
+
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          RIOT_API_KEY: ${{ secrets.RIOT_API_KEY }}
+          RIOT_REGION: BR1
+          RIOT_URL_ACCOUNT: americas.api.riotgames.com
+          RIOT_URL_SUMMONER: br1.api.riotgames.com
+          DOCKER_IMAGE_NAME: ${{ vars.DOCKER_IMAGE_NAME }}
+          COMPOSE_FILE_CONTENT: ${{ env.COMPOSE_FILE_CONTENT }}
         with:
           host: ${{ vars.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: DATABASE_URL,RIOT_API_KEY,RIOT_REGION,RIOT_URL_ACCOUNT,RIOT_URL_SUMMONER,DOCKER_IMAGE_NAME,COMPOSE_FILE_CONTENT
           script: |
-            mkdir -p /home/deploy_user/puzzle-api
-            cd /home/deploy_user/puzzle-api
+            cd /home/${{ secrets.VPS_USER }}/puzzle-api
             
-            echo "version: '3.9'" > docker-compose.yml
-            echo "services:" >> docker-compose.yml
-            echo "  puzzle-api:" >> docker-compose.yml
-            echo "    image: ${{ vars.DOCKER_IMAGE_NAME }}:latest" >> docker-compose.yml
-            echo "    container_name: puzzle-api" >> docker-compose.yml
-            echo "    restart: always" >> docker-compose.yml
-            echo "    environment:" >> docker-compose.yml
-            echo "      DATABASE_URL: postgresql://user:password@puzzle_academy_postgres:5432/puzzle_academy" >> docker-compose.yml
-            echo "    networks:" >> docker-compose.yml
-            echo "      - m2a_network" >> docker-compose.yml
-            echo "networks:" >> docker-compose.yml
-            echo "  m2a_network:" >> docker-compose.yml
-            echo "    external: true" >> docker-compose.yml
+            # Decode the compose file content
+            echo "$COMPOSE_FILE_CONTENT" | base64 -d > docker-compose.yml
+            
+            export DATABASE_URL=$DATABASE_URL
+            export RIOT_API_KEY=$RIOT_API_KEY
+            export RIOT_REGION=$RIOT_REGION
+            export RIOT_URL_ACCOUNT=$RIOT_URL_ACCOUNT
+            export RIOT_URL_SUMMONER=$RIOT_URL_SUMMONER
+            export DOCKER_IMAGE_NAME=$DOCKER_IMAGE_NAME
             
             docker compose pull
             docker compose up -d
