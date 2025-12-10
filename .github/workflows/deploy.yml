@@ -69,6 +69,15 @@ jobs:
             export RIOT_URL_SUMMONER="$RIOT_URL_SUMMONER"
             export DOCKER_IMAGE_NAME="$DOCKER_IMAGE_NAME"
             export APP_PORT="$APP_PORT"
+
+            echo "--- STARTING PRISMA MIGRATION ---"
+            docker run --rm \
+              --network m2a_network \
+              -e DATABASE_URL="$DATABASE_URL" \
+              $DOCKER_IMAGE_NAME:latest \
+              npx prisma migrate deploy
+
+            
             
             docker compose pull
             docker compose up -d
