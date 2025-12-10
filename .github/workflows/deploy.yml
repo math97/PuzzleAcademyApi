@@ -61,7 +61,7 @@ jobs:
             # Decode the compose file content
             echo "$COMPOSE_FILE_CONTENT" | base64 -d > docker-compose.yml
             
-            export DATABASE_URL=$(echo "$DATABASE_URL" | sed "s/^'//;s/'$//;s/^\"//;s/\"$//")
+            export DATABASE_URL=$DATABASE_URL
             export RIOT_API_KEY="$RIOT_API_KEY"
             export RIOT_REGION="$RIOT_REGION"
             export RIOT_URL_ACCOUNT="$RIOT_URL_ACCOUNT"
