@@ -8,100 +8,103 @@ import { PrismaPlayerMapper } from '../mappers/prisma-player-mapper';
 
 @Injectable()
 export class PrismaPlayerRepository implements PlayersRepository {
-    constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
-    async insert(player: Player): Promise<void> {
-        const data = PrismaPlayerMapper.toPrisma(player);
+  async insert(player: Player): Promise<void> {
+    const data = PrismaPlayerMapper.toPrisma(player);
 
-        await this.prisma.player.create({
-            data,
-        });
+    await this.prisma.player.create({
+      data,
+    });
+  }
+
+  async save(player: Player): Promise<void> {
+    const data = PrismaPlayerMapper.toPrisma(player);
+
+    await this.prisma.player.update({
+      where: {
+        id: data.id,
+      },
+      data,
+    });
+  }
+
+  async findByPuuid(puuid: string): Promise<Player | null> {
+    const player = await this.prisma.player.findUnique({
+      where: {
+        puuid,
+      },
+    });
+
+    if (!player) {
+      return null;
     }
 
-    async save(player: Player): Promise<void> {
-        const data = PrismaPlayerMapper.toPrisma(player);
+    return PrismaPlayerMapper.toDomain(player);
+  }
 
-        await this.prisma.player.update({
-            where: {
-                id: data.id,
-            },
-            data,
-        });
+  async findById(id: string): Promise<Player | null> {
+    const player = await this.prisma.player.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!player) {
+      return null;
     }
 
-    async findByPuuid(puuid: string): Promise<Player | null> {
-        const player = await this.prisma.player.findUnique({
-            where: {
-                puuid,
-            },
-        });
+    return PrismaPlayerMapper.toDomain(player);
+  }
 
-        if (!player) {
-            return null;
-        }
+  async findByNameAndTag(name: string, tag: string): Promise<Player | null> {
+    const player = await this.prisma.player.findFirst({
+      where: {
+        gameName: name,
+        tagLine: tag,
+      },
+    });
 
-        return PrismaPlayerMapper.toDomain(player);
+    if (!player) {
+      return null;
     }
 
-    async findById(id: string): Promise<Player | null> {
-        const player = await this.prisma.player.findUnique({
-            where: {
-                id,
-            },
-        });
+    return PrismaPlayerMapper.toDomain(player);
+  }
 
-        if (!player) {
-            return null;
-        }
+  async findAll({
+    page,
+    limit,
+  }: PaginationParams): Promise<PaginatedResult<Player>> {
+    const [total, players] = await Promise.all([
+      this.prisma.player.count(),
+      this.prisma.player.findMany({
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+    ]);
 
-        return PrismaPlayerMapper.toDomain(player);
-    }
+    const lastPage = Math.ceil(total / limit);
 
-    async findByNameAndTag(name: string, tag: string): Promise<Player | null> {
-        const player = await this.prisma.player.findFirst({
-            where: {
-                gameName: name,
-                tagLine: tag,
-            },
-        });
+    return {
+      data: players.map(PrismaPlayerMapper.toDomain),
+      meta: {
+        total,
+        page,
+        lastPage,
+      },
+    };
+  }
+  async findAllIds(): Promise<string[]> {
+    const players = await this.prisma.player.findMany({
+      select: {
+        id: true,
+      },
+    });
 
-        if (!player) {
-            return null;
-        }
-
-        return PrismaPlayerMapper.toDomain(player);
-    }
-
-    async findAll({ page, limit }: PaginationParams): Promise<PaginatedResult<Player>> {
-        const [total, players] = await Promise.all([
-            this.prisma.player.count(),
-            this.prisma.player.findMany({
-                skip: (page - 1) * limit,
-                take: limit,
-                orderBy: {
-                    createdAt: 'desc',
-                },
-            }),
-        ]);
-
-        const lastPage = Math.ceil(total / limit);
-
-        return {
-            data: players.map(PrismaPlayerMapper.toDomain),
-            meta: {
-                total,
-                page,
-                lastPage,
-            },
-        };
-    }
-    async findAllIds(): Promise<string[]> {
-        const players = await this.prisma.player.findMany({
-            select: {
-                id: true,
-            },
-        });
-
-        return players.map((player) => player.id);
-    }
+    return players.map((player) => player.id);
+  }
 }

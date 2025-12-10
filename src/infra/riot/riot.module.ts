@@ -4,14 +4,14 @@ import { RiotApiGateway } from '@/domain/league/application/gateways/riot-api-ga
 import { EnvModule } from '../env/env.module';
 
 @Module({
-    imports: [EnvModule],
-    providers: [
-        {
-            provide: RiotApiGateway,
-            useClass: RiotService,
-        },
-        RiotService,
-    ],
-    exports: [RiotApiGateway],
+  imports: [EnvModule],
+  providers: [
+    {
+      provide: RiotApiGateway,
+      useClass: RiotService,
+    },
+    RiotService,
+  ],
+  exports: [RiotApiGateway],
 })
-export class RiotModule { }
+export class RiotModule {}

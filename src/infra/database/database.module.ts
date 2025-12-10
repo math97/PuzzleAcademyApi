@@ -6,17 +6,17 @@ import { SnapshotRepository } from '@/domain/league/application/repositories/sna
 import { PrismaSnapshotRepository } from './prisma/repositories/prisma-snapshot-repository';
 
 @Module({
-    providers: [
-        PrismaService,
-        {
-            provide: PlayersRepository,
-            useClass: PrismaPlayerRepository,
-        },
-        {
-            provide: SnapshotRepository,
-            useClass: PrismaSnapshotRepository,
-        },
-    ],
-    exports: [PrismaService, PlayersRepository, SnapshotRepository],
+  providers: [
+    PrismaService,
+    {
+      provide: PlayersRepository,
+      useClass: PrismaPlayerRepository,
+    },
+    {
+      provide: SnapshotRepository,
+      useClass: PrismaSnapshotRepository,
+    },
+  ],
+  exports: [PrismaService, PlayersRepository, SnapshotRepository],
 })
-export class DatabaseModule { }
+export class DatabaseModule {}

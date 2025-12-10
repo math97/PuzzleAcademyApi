@@ -5,60 +5,56 @@ import { AppModule } from './../src/app.module';
 import { PrismaTestEnvironment } from './utils/prisma-test-environment';
 
 describe('CreatePlayerController (e2e)', () => {
-    let app: INestApplication;
-    const prismaTestEnvironment = new PrismaTestEnvironment();
+  let app: INestApplication;
+  const prismaTestEnvironment = new PrismaTestEnvironment();
 
-    beforeAll(async () => {
-        await prismaTestEnvironment.setup();
+  beforeAll(async () => {
+    await prismaTestEnvironment.setup();
 
-        const moduleFixture: TestingModule = await Test.createTestingModule({
-            imports: [AppModule],
-        }).compile();
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
 
-        app = moduleFixture.createNestApplication();
-        await app.init();
+    app = moduleFixture.createNestApplication();
+    await app.init();
+  });
+
+  afterAll(async () => {
+    await app.close();
+    await prismaTestEnvironment.teardown();
+  });
+
+  it('should create a new player', async () => {
+    const response = await request(app.getHttpServer()).post('/players').send({
+      gameName: 'ThorMath',
+      tagLine: 'BR1',
     });
 
-    afterAll(async () => {
-        await app.close();
-        await prismaTestEnvironment.teardown();
+    expect(response.status).toBe(201);
+    expect(response.body).toEqual({
+      id: expect.any(String),
+      gameName: 'ThorMath',
+      tagLine: 'br1',
+      puuid: expect.any(String),
+      tier: null,
+      rank: null,
+      leaguePoints: null,
+      profileIconId: null,
+      summonerLevel: null,
+    });
+  });
+
+  it('should return 409 if player already exists', async () => {
+    const response = await request(app.getHttpServer()).post('/players').send({
+      gameName: 'ThorMath',
+      tagLine: 'BR1',
     });
 
-    it('should create a new player', async () => {
-        const response = await request(app.getHttpServer())
-            .post('/players')
-            .send({
-                gameName: 'ThorMath',
-                tagLine: 'BR1',
-            });
-
-        expect(response.status).toBe(201);
-        expect(response.body).toEqual({
-            id: expect.any(String),
-            gameName: 'ThorMath',
-            tagLine: 'br1',
-            puuid: expect.any(String),
-            tier: null,
-            rank: null,
-            leaguePoints: null,
-            profileIconId: null,
-            summonerLevel: null,
-        });
+    expect(response.status).toBe(409);
+    expect(response.body).toEqual({
+      message: 'Player already exists',
+      error: 'Conflict',
+      statusCode: 409,
     });
-
-    it('should return 409 if player already exists', async () => {
-        const response = await request(app.getHttpServer())
-            .post('/players')
-            .send({
-                gameName: 'ThorMath',
-                tagLine: 'BR1',
-            });
-
-        expect(response.status).toBe(409);
-        expect(response.body).toEqual({
-            message: 'Player already exists',
-            error: 'Conflict',
-            statusCode: 409,
-        });
-    });
+  });
 });

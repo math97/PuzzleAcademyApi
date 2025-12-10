@@ -7,41 +7,41 @@ config({ path: '.env', override: true });
 config({ path: '.env.test', override: true });
 
 export class PrismaTestEnvironment {
-    private schema: string;
-    private connectionString: string;
-    private prisma: PrismaClient;
+  private schema: string;
+  private connectionString: string;
+  private prisma: PrismaClient;
 
-    constructor() {
-        const dbUrl = process.env.DATABASE_URL;
+  constructor() {
+    const dbUrl = process.env.DATABASE_URL;
 
-        if (!dbUrl) {
-            throw new Error('DATABASE_URL is not defined');
-        }
-
-        this.schema = `test_${randomUUID()}`;
-        const url = new URL(dbUrl);
-        url.searchParams.set('schema', this.schema);
-
-        this.connectionString = url.toString();
-        this.prisma = new PrismaClient({
-            datasources: { db: { url: this.connectionString } },
-        });
+    if (!dbUrl) {
+      throw new Error('DATABASE_URL is not defined');
     }
 
-    async setup() {
-        process.env.DATABASE_URL = this.connectionString;
+    this.schema = `test_${randomUUID()}`;
+    const url = new URL(dbUrl);
+    url.searchParams.set('schema', this.schema);
 
-        execSync(`npx prisma migrate deploy`, {
-            env: { ...process.env, DATABASE_URL: this.connectionString },
-        });
+    this.connectionString = url.toString();
+    this.prisma = new PrismaClient({
+      datasources: { db: { url: this.connectionString } },
+    });
+  }
 
-        return this.prisma;
-    }
+  async setup() {
+    process.env.DATABASE_URL = this.connectionString;
 
-    async teardown() {
-        await this.prisma.$executeRawUnsafe(
-            `DROP SCHEMA IF EXISTS "${this.schema}" CASCADE`,
-        );
-        await this.prisma.$disconnect();
-    }
+    execSync(`npx prisma migrate deploy`, {
+      env: { ...process.env, DATABASE_URL: this.connectionString },
+    });
+
+    return this.prisma;
+  }
+
+  async teardown() {
+    await this.prisma.$executeRawUnsafe(
+      `DROP SCHEMA IF EXISTS "${this.schema}" CASCADE`,
+    );
+    await this.prisma.$disconnect();
+  }
 }

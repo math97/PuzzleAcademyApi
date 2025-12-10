@@ -5,87 +5,103 @@ import { SnapshotRepository } from '@/domain/league/application/repositories/sna
 import { Snapshot } from '@/domain/league/enterprise/entities/snapshot';
 
 interface GetPlayerByIdRequest {
-    id: string;
-    from?: Date;
-    to?: Date;
+  id: string;
+  from?: Date;
+  to?: Date;
 }
 
 interface PlayerStats {
-    pointsLostOrWon: number;
-    pointsLostOrWonLifetime: number;
+  pointsLostOrWon: number;
+  pointsLostOrWonLifetime: number;
 }
 
 interface GetPlayerByIdResponse {
-    player: Player;
-    snapshots: Snapshot[];
-    stats: PlayerStats;
+  player: Player;
+  snapshots: Snapshot[];
+  stats: PlayerStats;
 }
 
 @Injectable()
 export class GetPlayerByIdUseCase {
-    constructor(
-        private playersRepository: PlayersRepository,
-        private snapshotRepository: SnapshotRepository,
-    ) { }
+  constructor(
+    private playersRepository: PlayersRepository,
+    private snapshotRepository: SnapshotRepository,
+  ) {}
 
-    async execute({ id, from, to }: GetPlayerByIdRequest): Promise<GetPlayerByIdResponse> {
-        const player = await this.playersRepository.findById(id);
+  async execute({
+    id,
+    from,
+    to,
+  }: GetPlayerByIdRequest): Promise<GetPlayerByIdResponse> {
+    const player = await this.playersRepository.findById(id);
 
-        if (!player) {
-            throw new NotFoundException('Player not found');
-        }
-
-        const { startDate, endDate } = this.getDateRange(from, to);
-
-        const snapshots = await this.snapshotRepository.findByPlayerIdAndDateRange(id, startDate, endDate);
-        const firstEverSnapshot = await this.snapshotRepository.findFirstByPlayerId(id);
-
-        const stats = this.calculateStats(snapshots, firstEverSnapshot);
-
-        return {
-            player,
-            snapshots,
-            stats,
-        };
+    if (!player) {
+      throw new NotFoundException('Player not found');
     }
 
-    private getDateRange(from?: Date, to?: Date): { startDate: Date; endDate: Date } {
-        const now = new Date();
+    const { startDate, endDate } = this.getDateRange(from, to);
 
-        if (from && to) {
-            return { startDate: from, endDate: to };
-        }
+    const snapshots = await this.snapshotRepository.findByPlayerIdAndDateRange(
+      id,
+      startDate,
+      endDate,
+    );
+    const firstEverSnapshot =
+      await this.snapshotRepository.findFirstByPlayerId(id);
 
-        if (from) {
-            return { startDate: from, endDate: now };
-        }
+    const stats = this.calculateStats(snapshots, firstEverSnapshot);
 
-        const startOfDay = new Date(now);
-        startOfDay.setHours(0, 0, 0, 0);
+    return {
+      player,
+      snapshots,
+      stats,
+    };
+  }
 
-        const endOfDay = new Date(now);
-        endOfDay.setHours(23, 59, 59, 999);
+  private getDateRange(
+    from?: Date,
+    to?: Date,
+  ): { startDate: Date; endDate: Date } {
+    const now = new Date();
 
-        return { startDate: startOfDay, endDate: endOfDay };
+    if (from && to) {
+      return { startDate: from, endDate: to };
     }
 
-    private calculateStats(snapshots: Snapshot[], firstEverSnapshot: Snapshot | null): PlayerStats {
-        let pointsLostOrWon = 0;
-        let pointsLostOrWonLifetime = 0;
-
-        if (snapshots.length > 0) {
-            const first = snapshots[0];
-            const last = snapshots[snapshots.length - 1];
-            pointsLostOrWon = last.totalPoints - first.totalPoints;
-
-            if (firstEverSnapshot) {
-                pointsLostOrWonLifetime = last.totalPoints - firstEverSnapshot.totalPoints;
-            }
-        }
-
-        return {
-            pointsLostOrWon,
-            pointsLostOrWonLifetime,
-        };
+    if (from) {
+      return { startDate: from, endDate: now };
     }
+
+    const startOfDay = new Date(now);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(now);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    return { startDate: startOfDay, endDate: endOfDay };
+  }
+
+  private calculateStats(
+    snapshots: Snapshot[],
+    firstEverSnapshot: Snapshot | null,
+  ): PlayerStats {
+    let pointsLostOrWon = 0;
+    let pointsLostOrWonLifetime = 0;
+
+    if (snapshots.length > 0) {
+      const first = snapshots[0];
+      const last = snapshots[snapshots.length - 1];
+      pointsLostOrWon = last.totalPoints - first.totalPoints;
+
+      if (firstEverSnapshot) {
+        pointsLostOrWonLifetime =
+          last.totalPoints - firstEverSnapshot.totalPoints;
+      }
+    }
+
+    return {
+      pointsLostOrWon,
+      pointsLostOrWonLifetime,
+    };
+  }
 }

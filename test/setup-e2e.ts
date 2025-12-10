@@ -3,9 +3,9 @@ import { PrismaTestEnvironment } from './utils/prisma-test-environment';
 const prismaTestEnvironment = new PrismaTestEnvironment();
 
 beforeAll(async () => {
-    await prismaTestEnvironment.setup();
+  await prismaTestEnvironment.setup();
 });
 
 afterAll(async () => {
-    await prismaTestEnvironment.teardown();
+  await prismaTestEnvironment.teardown();
 });

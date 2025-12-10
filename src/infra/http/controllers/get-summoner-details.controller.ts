@@ -5,44 +5,62 @@ import { ZodValidationPipe } from '@/infra/http/pipes/zod-validation-pipe';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 const getSummonerDetailsQuerySchema = z.object({
-    gameName: z.string(),
-    tag: z.string(),
+  gameName: z.string(),
+  tag: z.string(),
 });
 
-type GetSummonerDetailsQuerySchema = z.infer<typeof getSummonerDetailsQuerySchema>;
+type GetSummonerDetailsQuerySchema = z.infer<
+  typeof getSummonerDetailsQuerySchema
+>;
 
 import { PlayerPresenter } from '../presenters/player-presenter';
 
 @ApiTags('players')
 @Controller('/players/details')
 export class GetSummonerDetailsController {
-    constructor(private getSummonerDetailsUseCase: GetSummonerDetailsUseCase) { }
+  constructor(private getSummonerDetailsUseCase: GetSummonerDetailsUseCase) {}
 
-    @Get()
-    @ApiOperation({ summary: 'Get summoner details from Riot API and update player' })
-    @ApiQuery({ name: 'gameName', required: true, type: String, description: 'The game name of the player' })
-    @ApiQuery({ name: 'tag', required: true, type: String, description: 'The tag line of the player' })
-    @ApiResponse({ status: 200, description: 'Player details updated successfully' })
-    @ApiResponse({ status: 404, description: 'Player not found' })
-    async handle(
-        @Query(new ZodValidationPipe(getSummonerDetailsQuerySchema)) query: GetSummonerDetailsQuerySchema,
-    ) {
-        const { gameName, tag } = query;
+  @Get()
+  @ApiOperation({
+    summary: 'Get summoner details from Riot API and update player',
+  })
+  @ApiQuery({
+    name: 'gameName',
+    required: true,
+    type: String,
+    description: 'The game name of the player',
+  })
+  @ApiQuery({
+    name: 'tag',
+    required: true,
+    type: String,
+    description: 'The tag line of the player',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Player details updated successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Player not found' })
+  async handle(
+    @Query(new ZodValidationPipe(getSummonerDetailsQuerySchema))
+    query: GetSummonerDetailsQuerySchema,
+  ) {
+    const { gameName, tag } = query;
 
-        try {
-            const player = await this.getSummonerDetailsUseCase.execute({
-                gameName,
-                tag,
-            });
+    try {
+      const player = await this.getSummonerDetailsUseCase.execute({
+        gameName,
+        tag,
+      });
 
-            return {
-                data: PlayerPresenter.toHTTP(player),
-            };
-        } catch (error) {
-            if (error instanceof NotFoundException) {
-                throw new NotFoundException(error.message);
-            }
-            throw error;
-        }
+      return {
+        data: PlayerPresenter.toHTTP(player),
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(error.message);
+      }
+      throw error;
     }
+  }
 }
