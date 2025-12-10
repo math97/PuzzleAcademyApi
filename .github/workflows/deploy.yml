@@ -50,23 +50,25 @@ jobs:
           RIOT_URL_SUMMONER: br1.api.riotgames.com
           DOCKER_IMAGE_NAME: ${{ vars.DOCKER_IMAGE_NAME }}
           COMPOSE_FILE_CONTENT: ${{ env.COMPOSE_FILE_CONTENT }}
+          APP_PORT: ${{ vars.APP_PORT }}
         with:
           host: ${{ vars.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: DATABASE_URL,RIOT_API_KEY,RIOT_REGION,RIOT_URL_ACCOUNT,RIOT_URL_SUMMONER,DOCKER_IMAGE_NAME,COMPOSE_FILE_CONTENT
+          envs: DATABASE_URL,RIOT_API_KEY,RIOT_REGION,RIOT_URL_ACCOUNT,RIOT_URL_SUMMONER,DOCKER_IMAGE_NAME,COMPOSE_FILE_CONTENT,APP_PORT
           script: |
             cd /home/${{ secrets.VPS_USER }}/puzzle-api
             
             # Decode the compose file content
             echo "$COMPOSE_FILE_CONTENT" | base64 -d > docker-compose.yml
             
-            export DATABASE_URL=$DATABASE_URL
+            export DATABASE_URL="$DATABASE_URL"
             export RIOT_API_KEY="$RIOT_API_KEY"
             export RIOT_REGION="$RIOT_REGION"
             export RIOT_URL_ACCOUNT="$RIOT_URL_ACCOUNT"
             export RIOT_URL_SUMMONER="$RIOT_URL_SUMMONER"
             export DOCKER_IMAGE_NAME="$DOCKER_IMAGE_NAME"
+            export APP_PORT="$APP_PORT"
             
             docker compose pull
             docker compose up -d
