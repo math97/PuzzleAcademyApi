@@ -1,0 +1,60 @@
+name: Deploy Puzzle Academy API
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  unit-tests:
+    uses: ./.github/workflows/test.yml
+
+  e2e-tests:
+    uses: ./.github/workflows/e2e.yml
+
+  build-and-deploy:
+    needs: [unit-tests, e2e-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ vars.DOCKER_IMAGE_NAME }}:latest
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ vars.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            mkdir -p /home/deploy_user/puzzle-api
+            cd /home/deploy_user/puzzle-api
+            
+            echo "version: '3.9'" > docker-compose.yml
+            echo "services:" >> docker-compose.yml
+            echo "  puzzle-api:" >> docker-compose.yml
+            echo "    image: ${{ vars.DOCKER_IMAGE_NAME }}:latest" >> docker-compose.yml
+            echo "    container_name: puzzle-api" >> docker-compose.yml
+            echo "    restart: always" >> docker-compose.yml
+            echo "    environment:" >> docker-compose.yml
+            echo "      DATABASE_URL: postgresql://user:password@puzzle_academy_postgres:5432/puzzle_academy" >> docker-compose.yml
+            echo "    networks:" >> docker-compose.yml
+            echo "      - m2a_network" >> docker-compose.yml
+            echo "networks:" >> docker-compose.yml
+            echo "  m2a_network:" >> docker-compose.yml
+            echo "    external: true" >> docker-compose.yml
+            
+            docker compose pull
+            docker compose up -d
