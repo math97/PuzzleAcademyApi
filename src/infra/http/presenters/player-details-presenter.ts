@@ -5,21 +5,31 @@ import { Snapshot } from '@/domain/league/enterprise/entities/snapshot';
 
 export interface PlayerStats {
   pointsLostOrWon: number;
-  pointsLostOrWonLifetime: number;
+}
+
+export interface QueueStats {
+  snapshots: Snapshot[];
+  stats: PlayerStats;
 }
 
 export interface PlayerDetailsResponse {
   player: Player;
-  snapshots: Snapshot[];
-  stats: PlayerStats;
+  solo: QueueStats;
+  flex: QueueStats;
 }
 
 export class PlayerDetailsPresenter {
   static toHTTP(details: PlayerDetailsResponse) {
     return {
       player: PlayerPresenter.toHTTP(details.player),
-      snapshots: details.snapshots.map(SnapshotPresenter.toHTTP),
-      stats: details.stats,
+      solo: {
+        snapshots: details.solo.snapshots.map(SnapshotPresenter.toHTTP),
+        stats: details.solo.stats,
+      },
+      flex: {
+        snapshots: details.flex.snapshots.map(SnapshotPresenter.toHTTP),
+        stats: details.flex.stats,
+      },
     };
   }
 }

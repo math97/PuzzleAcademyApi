@@ -32,6 +32,7 @@ describe('Fetch All Players', () => {
           makeSnapshot({
             playerId: player.id.toString(),
             totalPoints: 100,
+            queueType: 'RANKED_SOLO_5x5',
             createdAt: new Date('2023-10-01T10:00:00Z'),
           }),
         );
@@ -39,6 +40,7 @@ describe('Fetch All Players', () => {
           makeSnapshot({
             playerId: player.id.toString(),
             totalPoints: 140,
+            queueType: 'RANKED_SOLO_5x5',
             createdAt: new Date('2023-10-01T14:00:00Z'),
           }),
         );
@@ -59,8 +61,13 @@ describe('Fetch All Players', () => {
 
     const player11 = result.data.find((d) => d.player.name === 'Player 11');
     expect(player11).toBeTruthy();
-    expect(player11?.stats.pointsLostOrWon).toBe(40);
-    expect(player11?.snapshots).toHaveLength(2);
+    // Assuming factory defaults queueType to 'RANKED_SOLO_5x5' or we need to set it.
+    // Ideally we should set explicit queue types in the setup above if makeSnapshot doesn't default.
+    // But since the use case filters by queue type, if the mock snapshots didn't have it, length would be 0.
+    // Let's assume we need to update the setup to include queueType if makeSnapshot doesn't default to SOLO.
+    // For now, let's update the assertions to matching structure.
+    expect(player11?.solo.stats.pointsLostOrWon).toBe(40);
+    expect(player11?.solo.snapshots).toHaveLength(2);
   });
 
   it('should be able to fetch empty list', async () => {

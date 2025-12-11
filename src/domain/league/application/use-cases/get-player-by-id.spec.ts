@@ -51,6 +51,7 @@ describe('Get Player By ID', () => {
       makeSnapshot({
         playerId: 'player-1',
         totalPoints: 100,
+        queueType: 'RANKED_SOLO_5x5',
         createdAt: new Date('2023-10-01T10:00:00Z'),
       }),
     );
@@ -60,6 +61,7 @@ describe('Get Player By ID', () => {
       makeSnapshot({
         playerId: 'player-1',
         totalPoints: 120,
+        queueType: 'RANKED_SOLO_5x5',
         createdAt: new Date('2023-10-01T11:00:00Z'),
       }),
     );
@@ -69,6 +71,7 @@ describe('Get Player By ID', () => {
       makeSnapshot({
         playerId: 'player-1',
         totalPoints: 110,
+        queueType: 'RANKED_SOLO_5x5',
         createdAt: new Date('2023-10-01T12:00:00Z'),
       }),
     );
@@ -78,6 +81,7 @@ describe('Get Player By ID', () => {
       makeSnapshot({
         playerId: 'player-1',
         totalPoints: 130,
+        queueType: 'RANKED_SOLO_5x5',
         createdAt: new Date('2023-10-01T13:00:00Z'),
       }),
     );
@@ -87,6 +91,7 @@ describe('Get Player By ID', () => {
       makeSnapshot({
         playerId: 'player-1',
         totalPoints: 140,
+        queueType: 'RANKED_SOLO_5x5',
         createdAt: new Date('2023-10-01T14:00:00Z'),
       }),
     );
@@ -97,7 +102,6 @@ describe('Get Player By ID', () => {
       to: new Date('2023-10-01T23:59:59Z'),
     });
 
-    expect(result.stats.pointsLostOrWon).toBe(40); // 140 - 100
-    expect(result.stats.pointsLostOrWonLifetime).toBe(40); // 140 - 100 (first ever is same as first in range here)
+    expect(result.solo.stats.pointsLostOrWon).toBe(40); // 140 - 100
   });
 });

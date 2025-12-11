@@ -58,11 +58,13 @@ describe('[GET] /players', () => {
     const snapshot1 = makeSnapshot({
       playerId: player.id.toString(),
       totalPoints: 100,
+      queueType: 'RANKED_SOLO_5x5',
       createdAt: new Date(date.setHours(10, 0, 0, 0)),
     });
     const snapshot2 = makeSnapshot({
       playerId: player.id.toString(),
       totalPoints: 120,
+      queueType: 'RANKED_SOLO_5x5',
       createdAt: new Date(date.setHours(11, 0, 0, 0)),
     });
 
@@ -87,10 +89,9 @@ describe('[GET] /players', () => {
 
     expect(response.body.data).toHaveLength(1);
     expect(response.body.data[0].player.id).toBe(player.id.toString());
-    expect(response.body.data[0].snapshots).toHaveLength(2);
-    expect(response.body.data[0].stats).toEqual({
+    expect(response.body.data[0].solo.snapshots).toHaveLength(2);
+    expect(response.body.data[0].solo.stats).toEqual({
       pointsLostOrWon: 20,
-      pointsLostOrWonLifetime: 20,
     });
   });
 });

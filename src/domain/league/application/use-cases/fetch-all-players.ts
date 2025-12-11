@@ -14,13 +14,17 @@ interface FetchAllPlayersRequest {
 
 export interface PlayerStats {
   pointsLostOrWon: number;
-  pointsLostOrWonLifetime: number;
+}
+
+export interface QueueStats {
+  snapshots: Snapshot[];
+  stats: PlayerStats;
 }
 
 export interface PlayerDetailsResponse {
   player: Player;
-  snapshots: Snapshot[];
-  stats: PlayerStats;
+  solo: QueueStats;
+  flex: QueueStats;
 }
 
 @Injectable()
@@ -28,7 +32,7 @@ export class FetchAllPlayersUseCase {
   constructor(
     private playersRepository: PlayersRepository,
     private snapshotRepository: SnapshotRepository,
-  ) {}
+  ) { }
 
   async execute({
     page,
@@ -51,16 +55,27 @@ export class FetchAllPlayersUseCase {
             startDate,
             endDate,
           );
-        const firstEverSnapshot =
-          await this.snapshotRepository.findFirstByPlayerId(
-            player.id.toString(),
-          );
-        const stats = this.calculateStats(snapshots, firstEverSnapshot);
+
+        const soloSnapshots = snapshots.filter(
+          (s) => s.queueType === 'RANKED_SOLO_5x5',
+        );
+        const flexSnapshots = snapshots.filter(
+          (s) => s.queueType === 'RANKED_FLEX_SR',
+        );
+
+        const soloStats = this.calculateStats(soloSnapshots);
+        const flexStats = this.calculateStats(flexSnapshots);
 
         return {
           player,
-          snapshots,
-          stats,
+          solo: {
+            snapshots: soloSnapshots,
+            stats: soloStats,
+          },
+          flex: {
+            snapshots: flexSnapshots,
+            stats: flexStats,
+          },
         };
       }),
     );
@@ -96,25 +111,17 @@ export class FetchAllPlayersUseCase {
 
   private calculateStats(
     snapshots: Snapshot[],
-    firstEverSnapshot: Snapshot | null,
   ): PlayerStats {
     let pointsLostOrWon = 0;
-    let pointsLostOrWonLifetime = 0;
 
     if (snapshots.length > 0) {
       const first = snapshots[0];
       const last = snapshots[snapshots.length - 1];
       pointsLostOrWon = last.totalPoints - first.totalPoints;
-
-      if (firstEverSnapshot) {
-        pointsLostOrWonLifetime =
-          last.totalPoints - firstEverSnapshot.totalPoints;
-      }
     }
 
     return {
       pointsLostOrWon,
-      pointsLostOrWonLifetime,
     };
   }
 }
