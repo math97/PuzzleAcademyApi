@@ -39,8 +39,8 @@ describe('CreatePlayerController (e2e)', () => {
       tier: null,
       rank: null,
       leaguePoints: null,
-      profileIconId: null,
-      summonerLevel: null,
+      profileIconId: expect.any(Number),
+      summonerLevel: expect.any(Number),
     });
   });
 

@@ -16,7 +16,10 @@ describe('Add Player', () => {
         gameName: 'any_name',
         tagLine: 'any_tag',
       }),
-      getSummonerDetails: vi.fn(),
+      getSummonerDetails: vi.fn().mockResolvedValue({
+        summonerLevel: 123,
+        profileIconId: 456,
+      }),
       getLeagueEntries: vi.fn(),
     };
     sut = new AddPlayerUseCase(inMemoryPlayersRepository, riotApiGateway);

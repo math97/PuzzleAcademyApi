@@ -21,7 +21,7 @@ export class AddPlayerUseCase {
   constructor(
     private playersRepository: PlayersRepository,
     private riotApiGateway: RiotApiGateway,
-  ) {}
+  ) { }
 
   async execute({
     name,
@@ -41,10 +41,16 @@ export class AddPlayerUseCase {
       throw new ConflictException('Player already exists');
     }
 
+    const details = await this.riotApiGateway.getSummonerDetails(
+      riotSummoner.puuid,
+    );
+
     const player = Player.create({
       name: riotSummoner.gameName,
       tag: riotSummoner.tagLine,
       riotPuiid: riotSummoner.puuid,
+      summonerLevel: details?.summonerLevel,
+      profileIconId: details?.profileIconId,
     });
 
     await this.playersRepository.insert(player);
