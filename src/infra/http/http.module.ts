@@ -15,6 +15,8 @@ import { LoadPlayerStatsController } from './controllers/load-player-stats.contr
 import { LoadPlayerStatsUseCase } from '@/domain/league/application/use-cases/load-player-stats';
 import { LoadAllPlayersStatsController } from './controllers/load-all-players-stats.controller';
 import { LoadAllPlayersStatsUseCase } from '@/domain/league/application/use-cases/load-all-players-stats';
+import { UpdateChampionMasteriesController } from './controllers/update-champion-masteries.controller';
+import { UpdateChampionMasteriesUseCase } from '@/domain/league/application/use-cases/update-champion-masteries';
 
 @Module({
   imports: [DatabaseModule, RiotModule],
@@ -25,6 +27,7 @@ import { LoadAllPlayersStatsUseCase } from '@/domain/league/application/use-case
     GetPlayerByIdController,
     LoadPlayerStatsController,
     LoadAllPlayersStatsController,
+    UpdateChampionMasteriesController,
   ],
   providers: [
     AddPlayerUseCase,
@@ -33,6 +36,7 @@ import { LoadAllPlayersStatsUseCase } from '@/domain/league/application/use-case
     GetPlayerByIdUseCase,
     LoadPlayerStatsUseCase,
     LoadAllPlayersStatsUseCase,
+    UpdateChampionMasteriesUseCase,
   ],
 })
-export class HttpModule {}
+export class HttpModule { }

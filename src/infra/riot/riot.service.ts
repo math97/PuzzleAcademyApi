@@ -3,6 +3,7 @@ import {
   RiotApiGateway,
   RiotSummonerDTO,
   RiotSummonerDetailsDTO,
+  RiotChampionMasteryDTO,
 } from '@/domain/league/application/gateways/riot-api-gateway';
 import { EnvService } from '@/infra/env/env.service';
 
@@ -110,6 +111,33 @@ export class RiotService implements RiotApiGateway {
     } catch (error) {
       throw new InternalServerErrorException(
         `Error fetching league entries: ${error}`,
+      );
+    }
+  }
+
+  async getTopChampionMasteries(
+    puuid: string,
+  ): Promise<RiotChampionMasteryDTO[]> {
+    try {
+      const url = `https://${this.riotSummonerUrl}/lol/champion-mastery/v4/champion-masteries/by-puuid/${puuid}/top?count=3`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'X-Riot-Token': this.apiKey,
+        },
+      });
+
+      if (!response.ok) {
+        throw new InternalServerErrorException(
+          `Riot API error: ${response.statusText}`,
+        );
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Error fetching champion masteries: ${error}`,
       );
     }
   }

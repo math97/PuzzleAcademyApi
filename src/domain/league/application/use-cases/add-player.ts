@@ -5,7 +5,10 @@ import {
 } from '@nestjs/common';
 import { Player } from '@/domain/league/enterprise/entities/player';
 import { PlayersRepository } from '../repositories/players-repository';
-import { RiotApiGateway } from '../gateways/riot-api-gateway';
+import {
+  RiotApiGateway,
+  RiotChampionMasteryDTO,
+} from '../gateways/riot-api-gateway';
 
 interface AddPlayerUseCaseRequest {
   name: string;
@@ -45,12 +48,25 @@ export class AddPlayerUseCase {
       riotSummoner.puuid,
     );
 
+    let masteries: RiotChampionMasteryDTO[] = [];
+    try {
+      masteries = await this.riotApiGateway.getTopChampionMasteries(
+        riotSummoner.puuid,
+      );
+    } catch (error) {
+      console.error('Failed to fetch champion masteries', error);
+    }
+
     const player = Player.create({
       name: riotSummoner.gameName,
       tag: riotSummoner.tagLine,
       riotPuiid: riotSummoner.puuid,
       summonerLevel: details?.summonerLevel,
       profileIconId: details?.profileIconId,
+      championMasteries: masteries.map((mastery) => ({
+        championId: mastery.championId,
+        championLevel: mastery.championLevel,
+      })),
     });
 
     await this.playersRepository.insert(player);

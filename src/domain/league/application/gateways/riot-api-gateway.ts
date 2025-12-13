@@ -20,6 +20,19 @@ export interface RiotLeagueEntryDTO {
   hotStreak: boolean;
 }
 
+export interface RiotChampionMasteryDTO {
+  puuid: string;
+  championId: number;
+  championLevel: number;
+  championPoints: number;
+  lastPlayTime: number;
+  championPointsSinceLastLevel: number;
+  championPointsUntilNextLevel: number;
+  markRequiredForNextLevel: number;
+  tokensEarned: number;
+  championSeasonMilestone: number;
+}
+
 export abstract class RiotApiGateway {
   abstract getSummoner(
     name: string,
@@ -29,4 +42,7 @@ export abstract class RiotApiGateway {
     puuid: string,
   ): Promise<RiotSummonerDetailsDTO | null>;
   abstract getLeagueEntries(puuid: string): Promise<RiotLeagueEntryDTO[]>;
+  abstract getTopChampionMasteries(
+    puuid: string,
+  ): Promise<RiotChampionMasteryDTO[]>;
 }

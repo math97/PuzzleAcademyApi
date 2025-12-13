@@ -11,6 +11,12 @@ export interface PlayerProps {
   leaguePoints?: number | null;
   profileIconId?: number | null;
   summonerLevel?: number | null;
+  championMasteries?: ChampionMastery[];
+}
+
+export interface ChampionMastery {
+  championId: number;
+  championLevel: number;
 }
 
 export class Player extends Entity<PlayerProps> {
@@ -46,6 +52,10 @@ export class Player extends Entity<PlayerProps> {
     return this.props.summonerLevel;
   }
 
+  get championMasteries() {
+    return this.props.championMasteries;
+  }
+
   static create(
     props: Optional<
       PlayerProps,
@@ -61,6 +71,7 @@ export class Player extends Entity<PlayerProps> {
         leaguePoints: props.leaguePoints ?? null,
         profileIconId: props.profileIconId ?? null,
         summonerLevel: props.summonerLevel ?? null,
+        championMasteries: props.championMasteries ?? [],
       },
       id,
     );
@@ -77,5 +88,9 @@ export class Player extends Entity<PlayerProps> {
     this.props.tier = stats.tier;
     this.props.rank = stats.rank;
     this.props.leaguePoints = stats.leaguePoints;
+  }
+
+  updateChampionMasteries(masteries: ChampionMastery[]) {
+    this.props.championMasteries = masteries;
   }
 }
