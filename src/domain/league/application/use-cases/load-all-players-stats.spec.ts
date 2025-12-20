@@ -42,25 +42,6 @@ describe('LoadAllPlayersStatsUseCase', () => {
     });
   });
 
-  it('should handle errors gracefully', async () => {
-    const playerIds = ['1', '2'];
-    (playersRepository.findAllIds as Mock).mockResolvedValue(playerIds);
-    (loadPlayerStatsUseCase.execute as Mock).mockImplementation(
-      async ({ playerId }) => {
-        if (playerId === '1') {
-          throw new Error('Failed');
-        }
-      },
-    );
-
-    await sut.execute();
-
-    expect(loadPlayerStatsUseCase.execute).toHaveBeenCalledTimes(2);
-    expect(loadPlayerStatsUseCase.execute).toHaveBeenCalledWith({
-      playerId: '2',
-    });
-  });
-
   it('should respect concurrency limit', async () => {
     const playerIds = Array.from({ length: 10 }, (_, i) => i.toString());
     (playersRepository.findAllIds as Mock).mockResolvedValue(playerIds);

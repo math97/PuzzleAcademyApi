@@ -15,6 +15,11 @@ export class PrismaPlayerMapper {
         rank: raw.rank,
         leaguePoints: null,
         championMasteries: raw.championMasteries as unknown as ChampionMastery[],
+        stats: {
+          totalKills: raw.totalKills,
+          totalDeaths: raw.totalDeaths,
+          totalAssists: raw.totalAssists,
+        },
       },
       new UniqueEntityId(raw.id),
     );
@@ -32,6 +37,9 @@ export class PrismaPlayerMapper {
       rank: player.rank,
       region: 'BR1',
       championMasteries: player.championMasteries as unknown as Prisma.NullableJsonNullValueInput,
+      totalKills: player.stats?.totalKills || 0,
+      totalDeaths: player.stats?.totalDeaths || 0,
+      totalAssists: player.stats?.totalAssists || 0,
     };
   }
 }

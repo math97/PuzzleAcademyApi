@@ -12,6 +12,9 @@ export class FakeRiotApiGateway implements RiotApiGateway {
     public leagueEntries: RiotLeagueEntryDTO[] = [];
     public masteries: RiotChampionMasteryDTO[] = [];
 
+    public matches: string[] = [];
+    public matchDetails: any = null;
+
     async getSummoner(name: string, tag: string): Promise<RiotSummonerDTO | null> {
         return this.summoner;
     }
@@ -30,5 +33,17 @@ export class FakeRiotApiGateway implements RiotApiGateway {
         puuid: string,
     ): Promise<RiotChampionMasteryDTO[]> {
         return this.masteries;
+    }
+
+    async getMatchesByPuuid(
+        puuid: string,
+        startTime?: number,
+        endTime?: number,
+    ): Promise<string[]> {
+        return this.matches;
+    }
+
+    async getMatchDetails(matchId: string): Promise<any> {
+        return this.matchDetails;
     }
 }

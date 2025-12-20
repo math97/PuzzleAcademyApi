@@ -12,6 +12,13 @@ export interface PlayerProps {
   profileIconId?: number | null;
   summonerLevel?: number | null;
   championMasteries?: ChampionMastery[];
+  stats?: PlayerStats;
+}
+
+export interface PlayerStats {
+  totalKills: number;
+  totalDeaths: number;
+  totalAssists: number;
 }
 
 export interface ChampionMastery {
@@ -56,10 +63,14 @@ export class Player extends Entity<PlayerProps> {
     return this.props.championMasteries;
   }
 
+  get stats() {
+    return this.props.stats;
+  }
+
   static create(
     props: Optional<
       PlayerProps,
-      'tier' | 'rank' | 'leaguePoints' | 'profileIconId' | 'summonerLevel'
+      'tier' | 'rank' | 'leaguePoints' | 'profileIconId' | 'summonerLevel' | 'stats'
     >,
     id?: UniqueEntityId,
   ) {
@@ -72,6 +83,11 @@ export class Player extends Entity<PlayerProps> {
         profileIconId: props.profileIconId ?? null,
         summonerLevel: props.summonerLevel ?? null,
         championMasteries: props.championMasteries ?? [],
+        stats: props.stats ?? {
+          totalKills: 0,
+          totalDeaths: 0,
+          totalAssists: 0,
+        },
       },
       id,
     );
@@ -92,5 +108,23 @@ export class Player extends Entity<PlayerProps> {
 
   updateChampionMasteries(masteries: ChampionMastery[]) {
     this.props.championMasteries = masteries;
+  }
+
+  updateAggregatedStats(matches: { kills: number; deaths: number; assists: number }[]) {
+    let totalKills = 0;
+    let totalDeaths = 0;
+    let totalAssists = 0;
+
+    for (const match of matches) {
+      totalKills += match.kills;
+      totalDeaths += match.deaths;
+      totalAssists += match.assists;
+    }
+
+    this.props.stats = {
+      totalKills,
+      totalDeaths,
+      totalAssists,
+    };
   }
 }

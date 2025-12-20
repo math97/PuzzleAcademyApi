@@ -45,4 +45,10 @@ export abstract class RiotApiGateway {
   abstract getTopChampionMasteries(
     puuid: string,
   ): Promise<RiotChampionMasteryDTO[]>;
+  abstract getMatchesByPuuid(
+    puuid: string,
+    startTime?: number,
+    endTime?: number,
+  ): Promise<string[]>;
+  abstract getMatchDetails(matchId: string): Promise<any>;
 }

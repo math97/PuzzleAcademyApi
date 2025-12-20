@@ -141,4 +141,70 @@ export class RiotService implements RiotApiGateway {
       );
     }
   }
+
+  async getMatchesByPuuid(
+    puuid: string,
+    startTime?: number,
+    endTime?: number,
+  ): Promise<string[]> {
+    try {
+      const url = new URL(
+        `https://${this.riotAccountUrl}/lol/match/v5/matches/by-puuid/${puuid}/ids`,
+      );
+      url.searchParams.append('start', '0');
+      url.searchParams.append('count', '20');
+      if (startTime) {
+        url.searchParams.append('startTime', startTime.toString());
+      }
+      if (endTime) {
+        url.searchParams.append('endTime', endTime.toString());
+      }
+
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          'X-Riot-Token': this.apiKey,
+        },
+      });
+
+      if (!response.ok) {
+        throw new InternalServerErrorException(
+          `Riot API error: ${response.statusText}`,
+        );
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Error fetching matches: ${error}`,
+      );
+    }
+  }
+
+  async getMatchDetails(matchId: string): Promise<any> {
+    try {
+      const url = `https://${this.riotAccountUrl}/lol/match/v5/matches/${matchId}`;
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'X-Riot-Token': this.apiKey,
+        },
+      });
+
+      if (!response.ok) {
+        throw new InternalServerErrorException(
+          `Riot API error: ${response.statusText}`,
+        );
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Error fetching match details: ${error}`,
+      );
+    }
+  }
 }

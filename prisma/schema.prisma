@@ -24,10 +24,45 @@ model Player {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   championMasteries Json?
+  totalKills        Int      @default(0)
+  totalDeaths       Int      @default(0)
+  totalAssists      Int      @default(0)
 
   snapshots     Snapshot[]
+  matches       MatchParticipant[]
 
   @@map("players")
+}
+
+model Match {
+  id           String   @id @default(uuid())
+  riotMatchId  String   @unique
+  gameCreation DateTime
+  gameDuration Int
+  gameMode     String
+
+  participants MatchParticipant[]
+
+  @@map("matches")
+}
+
+model MatchParticipant {
+  id               String  @id @default(uuid())
+  matchId          String
+  puuid            String
+  summonerName     String
+  championName     String
+  kills            Int
+  deaths           Int
+  assists          Int
+  win              Boolean
+  totalDamageDealt Int
+  visionScore      Int
+
+  match  Match   @relation(fields: [matchId], references: [id])
+  player Player? @relation(fields: [puuid], references: [puuid])
+
+  @@map("match_participants")
 }
 
 model Snapshot {
