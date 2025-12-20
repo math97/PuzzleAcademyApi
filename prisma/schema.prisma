@@ -27,6 +27,7 @@ model Player {
   totalKills        Int      @default(0)
   totalDeaths       Int      @default(0)
   totalAssists      Int      @default(0)
+  bestMatchKda      Float    @default(0.0)
 
   snapshots     Snapshot[]
   matches       MatchParticipant[]

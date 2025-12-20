@@ -19,6 +19,7 @@ export class PrismaPlayerMapper {
           totalKills: raw.totalKills,
           totalDeaths: raw.totalDeaths,
           totalAssists: raw.totalAssists,
+          bestMatchKda: (raw as any).bestMatchKda ?? 0,
         },
       },
       new UniqueEntityId(raw.id),
@@ -40,6 +41,7 @@ export class PrismaPlayerMapper {
       totalKills: player.stats?.totalKills || 0,
       totalDeaths: player.stats?.totalDeaths || 0,
       totalAssists: player.stats?.totalAssists || 0,
+      bestMatchKda: player.stats?.bestMatchKda || 0.0,
     };
   }
 }

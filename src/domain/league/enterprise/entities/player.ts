@@ -19,6 +19,7 @@ export interface PlayerStats {
   totalKills: number;
   totalDeaths: number;
   totalAssists: number;
+  bestMatchKda: number;
 }
 
 export interface ChampionMastery {
@@ -87,6 +88,7 @@ export class Player extends Entity<PlayerProps> {
           totalKills: 0,
           totalDeaths: 0,
           totalAssists: 0,
+          bestMatchKda: 0,
         },
       },
       id,
@@ -114,17 +116,27 @@ export class Player extends Entity<PlayerProps> {
     let totalKills = 0;
     let totalDeaths = 0;
     let totalAssists = 0;
+    let bestMatchKda = 0;
 
     for (const match of matches) {
       totalKills += match.kills;
       totalDeaths += match.deaths;
       totalAssists += match.assists;
+
+      const kda = match.deaths === 0
+        ? match.kills + match.assists // Perfect KDA logic: Sum of K+A (or could be a high fixed multiplier)
+        : (match.kills + match.assists) / match.deaths;
+
+      if (kda > bestMatchKda) {
+        bestMatchKda = Number(kda.toFixed(2));
+      }
     }
 
     this.props.stats = {
       totalKills,
       totalDeaths,
       totalAssists,
+      bestMatchKda,
     };
   }
 }

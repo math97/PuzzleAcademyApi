@@ -13,6 +13,7 @@ export class PlayerPresenter {
       rank: player.rank,
       leaguePoints: player.leaguePoints,
       championMasteries: player.championMasteries,
+      stats: player.stats,
     };
   }
 }

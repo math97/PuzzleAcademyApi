@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "players" ADD COLUMN     "bestMatchKda" DOUBLE PRECISION NOT NULL DEFAULT 0.0;
