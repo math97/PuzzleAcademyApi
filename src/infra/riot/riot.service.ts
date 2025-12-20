@@ -6,6 +6,7 @@ import {
   RiotChampionMasteryDTO,
 } from '@/domain/league/application/gateways/riot-api-gateway';
 import { EnvService } from '@/infra/env/env.service';
+import { RateLimiter } from '@/domain/league/application/gateways/rate-limiter';
 
 @Injectable()
 export class RiotService implements RiotApiGateway {
@@ -13,7 +14,10 @@ export class RiotService implements RiotApiGateway {
   private riotAccountUrl: string;
   private riotSummonerUrl: string;
 
-  constructor(private readonly envService: EnvService) {
+  constructor(
+    private readonly envService: EnvService,
+    private readonly rateLimiter: RateLimiter,
+  ) {
     this.apiKey = this.envService.get('RIOT_API_KEY');
     this.riotAccountUrl = this.envService.get('RIOT_URL_ACCOUNT');
     this.riotSummonerUrl = this.envService.get('RIOT_URL_SUMMONER');
@@ -23,123 +27,133 @@ export class RiotService implements RiotApiGateway {
     name: string,
     tag: string,
   ): Promise<RiotSummonerDTO | null> {
-    try {
-      const accountUrl = `https://${this.riotAccountUrl}/riot/account/v1/accounts/by-riot-id/${name}/${tag}`;
-      const accountResponse = await fetch(accountUrl, {
-        method: 'GET',
-        headers: {
-          'X-Riot-Token': this.apiKey,
-        },
-      });
+    return this.rateLimiter.schedule(async () => {
+      try {
+        const accountUrl = `https://${this.riotAccountUrl}/riot/account/v1/accounts/by-riot-id/${name}/${tag}`;
+        const accountResponse = await fetch(accountUrl, {
+          method: 'GET',
+          headers: {
+            'X-Riot-Token': this.apiKey,
+          },
+        });
 
-      if (accountResponse.status === 404) {
-        return null;
-      }
+        if (accountResponse.status === 404) {
+          return null;
+        }
 
-      if (!accountResponse.ok) {
+        if (!accountResponse.ok) {
+          throw new InternalServerErrorException(
+            `Riot API error: ${accountResponse.statusText}`,
+          );
+        }
+
+        const accountData = await accountResponse.json();
+        const puuid = accountData.puuid;
+
+        return {
+          puuid: puuid,
+          gameName: accountData.gameName,
+          tagLine: accountData.tagLine,
+        };
+      } catch (error) {
         throw new InternalServerErrorException(
-          `Riot API error: ${accountResponse.statusText}`,
+          `Error fetching summoner: ${error}`,
         );
       }
-
-      const accountData = await accountResponse.json();
-      const puuid = accountData.puuid;
-
-      return {
-        puuid: puuid,
-        gameName: accountData.gameName,
-        tagLine: accountData.tagLine,
-      };
-    } catch (error) {
-      throw new InternalServerErrorException(
-        `Error fetching summoner: ${error}`,
-      );
-    }
+    });
   }
 
   async getSummonerDetails(
     puuid: string,
   ): Promise<RiotSummonerDetailsDTO | null> {
-    try {
-      const summonerUrl = `https://${this.riotSummonerUrl}/lol/summoner/v4/summoners/by-puuid/${puuid}`;
-      const summonerResponse = await fetch(summonerUrl, {
-        method: 'GET',
-        headers: {
-          'X-Riot-Token': this.apiKey,
-        },
-      });
+    return this.rateLimiter.schedule(async () => {
+      try {
+        const summonerUrl = `https://${this.riotSummonerUrl}/lol/summoner/v4/summoners/by-puuid/${puuid}`;
+        const summonerResponse = await fetch(summonerUrl, {
+          method: 'GET',
+          headers: {
+            'X-Riot-Token': this.apiKey,
+          },
+        });
 
-      if (summonerResponse.status === 404) {
-        return null;
-      }
+        if (summonerResponse.status === 404) {
+          return null;
+        }
 
-      if (!summonerResponse.ok) {
+        if (!summonerResponse.ok) {
+          throw new InternalServerErrorException(
+            `Riot API error: ${summonerResponse.statusText}`,
+          );
+        }
+
+        const summonerData = await summonerResponse.json();
+
+        return {
+          profileIconId: summonerData.profileIconId,
+          summonerLevel: summonerData.summonerLevel,
+        };
+      } catch (error) {
         throw new InternalServerErrorException(
-          `Riot API error: ${summonerResponse.statusText}`,
+          'Error fetching summoner details',
         );
       }
-
-      const summonerData = await summonerResponse.json();
-
-      return {
-        profileIconId: summonerData.profileIconId,
-        summonerLevel: summonerData.summonerLevel,
-      };
-    } catch (error) {
-      throw new InternalServerErrorException('Error fetching summoner details');
-    }
+    });
   }
 
   async getLeagueEntries(puuid: string): Promise<any[]> {
-    try {
-      const url = `https://${this.riotSummonerUrl}/lol/league/v4/entries/by-puuid/${puuid}`;
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'X-Riot-Token': this.apiKey,
-        },
-      });
+    return this.rateLimiter.schedule(async () => {
+      try {
+        const url = `https://${this.riotSummonerUrl}/lol/league/v4/entries/by-puuid/${puuid}`;
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'X-Riot-Token': this.apiKey,
+          },
+        });
 
-      if (!response.ok) {
+        if (!response.ok) {
+          throw new InternalServerErrorException(
+            `Riot API error: ${response.statusText}`,
+          );
+        }
+
+        const data = await response.json();
+        return data;
+      } catch (error) {
         throw new InternalServerErrorException(
-          `Riot API error: ${response.statusText}`,
+          `Error fetching league entries: ${error}`,
         );
       }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      throw new InternalServerErrorException(
-        `Error fetching league entries: ${error}`,
-      );
-    }
+    });
   }
 
   async getTopChampionMasteries(
     puuid: string,
   ): Promise<RiotChampionMasteryDTO[]> {
-    try {
-      const url = `https://${this.riotSummonerUrl}/lol/champion-mastery/v4/champion-masteries/by-puuid/${puuid}/top?count=3`;
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'X-Riot-Token': this.apiKey,
-        },
-      });
+    return this.rateLimiter.schedule(async () => {
+      try {
+        const url = `https://${this.riotSummonerUrl}/lol/champion-mastery/v4/champion-masteries/by-puuid/${puuid}/top?count=3`;
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'X-Riot-Token': this.apiKey,
+          },
+        });
 
-      if (!response.ok) {
+        if (!response.ok) {
+          throw new InternalServerErrorException(
+            `Riot API error: ${response.statusText}`,
+          );
+        }
+
+        const data = await response.json();
+        return data;
+      } catch (error) {
         throw new InternalServerErrorException(
-          `Riot API error: ${response.statusText}`,
+          `Error fetching champion masteries: ${error}`,
         );
       }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      throw new InternalServerErrorException(
-        `Error fetching champion masteries: ${error}`,
-      );
-    }
+    });
   }
 
   async getMatchesByPuuid(
@@ -147,64 +161,68 @@ export class RiotService implements RiotApiGateway {
     startTime?: number,
     endTime?: number,
   ): Promise<string[]> {
-    try {
-      const url = new URL(
-        `https://${this.riotAccountUrl}/lol/match/v5/matches/by-puuid/${puuid}/ids`,
-      );
-      url.searchParams.append('start', '0');
-      url.searchParams.append('count', '20');
-      if (startTime) {
-        url.searchParams.append('startTime', startTime.toString());
-      }
-      if (endTime) {
-        url.searchParams.append('endTime', endTime.toString());
-      }
+    return this.rateLimiter.schedule(async () => {
+      try {
+        const url = new URL(
+          `https://${this.riotAccountUrl}/lol/match/v5/matches/by-puuid/${puuid}/ids`,
+        );
+        url.searchParams.append('start', '0');
+        url.searchParams.append('count', '20');
+        if (startTime) {
+          url.searchParams.append('startTime', startTime.toString());
+        }
+        if (endTime) {
+          url.searchParams.append('endTime', endTime.toString());
+        }
 
-      const response = await fetch(url.toString(), {
-        method: 'GET',
-        headers: {
-          'X-Riot-Token': this.apiKey,
-        },
-      });
+        const response = await fetch(url.toString(), {
+          method: 'GET',
+          headers: {
+            'X-Riot-Token': this.apiKey,
+          },
+        });
 
-      if (!response.ok) {
+        if (!response.ok) {
+          throw new InternalServerErrorException(
+            `Riot API error: ${response.statusText}`,
+          );
+        }
+
+        const data = await response.json();
+        return data;
+      } catch (error) {
         throw new InternalServerErrorException(
-          `Riot API error: ${response.statusText}`,
+          `Error fetching matches: ${error}`,
         );
       }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      throw new InternalServerErrorException(
-        `Error fetching matches: ${error}`,
-      );
-    }
+    });
   }
 
   async getMatchDetails(matchId: string): Promise<any> {
-    try {
-      const url = `https://${this.riotAccountUrl}/lol/match/v5/matches/${matchId}`;
+    return this.rateLimiter.schedule(async () => {
+      try {
+        const url = `https://${this.riotAccountUrl}/lol/match/v5/matches/${matchId}`;
 
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'X-Riot-Token': this.apiKey,
-        },
-      });
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'X-Riot-Token': this.apiKey,
+          },
+        });
 
-      if (!response.ok) {
+        if (!response.ok) {
+          throw new InternalServerErrorException(
+            `Riot API error: ${response.statusText}`,
+          );
+        }
+
+        const data = await response.json();
+        return data;
+      } catch (error) {
         throw new InternalServerErrorException(
-          `Riot API error: ${response.statusText}`,
+          `Error fetching match details: ${error}`,
         );
       }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      throw new InternalServerErrorException(
-        `Error fetching match details: ${error}`,
-      );
-    }
+    });
   }
 }
