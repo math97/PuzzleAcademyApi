@@ -20,8 +20,10 @@ import { UpdateChampionMasteriesUseCase } from '@/domain/league/application/use-
 import { LoadPlayerMatchesController } from './controllers/load-player-matches.controller';
 import { LoadPlayerMatchesUseCase } from '@/domain/league/application/use-cases/load-player-matches';
 
+import { EnvModule } from '../env/env.module';
+
 @Module({
-  imports: [DatabaseModule, RiotModule],
+  imports: [DatabaseModule, RiotModule, EnvModule],
   controllers: [
     CreatePlayerController,
     GetSummonerDetailsController,

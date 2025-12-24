@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { ZodValidationPipe } from '@/infra/http/pipes/zod-validation-pipe';
 import { PlayerDetailsPresenter } from '../presenters/player-details-presenter';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { EnvService } from '@/infra/env/env.service';
 
 const pageQueryParamSchema = z
   .string()
@@ -29,7 +30,10 @@ type QuerySchema = z.infer<typeof querySchema>;
 @ApiTags('players')
 @Controller('/players')
 export class FetchAllPlayersController {
-  constructor(private fetchAllPlayersUseCase: FetchAllPlayersUseCase) {}
+  constructor(
+    private fetchAllPlayersUseCase: FetchAllPlayersUseCase,
+    private envService: EnvService,
+  ) { }
 
   @Get()
   @ApiOperation({ summary: 'Fetch all players with pagination' })
@@ -63,10 +67,13 @@ export class FetchAllPlayersController {
   ) {
     const { page, limit } = query;
 
+    const seasonStartDate = this.envService.get('SEASON_START_DATE');
+    const defaultFrom = new Date(seasonStartDate);
+
     const result = await this.fetchAllPlayersUseCase.execute({
       page,
       limit,
-      from: from ? new Date(from) : undefined,
+      from: from ? new Date(from) : defaultFrom,
       to: to ? new Date(to) : undefined,
     });
 
