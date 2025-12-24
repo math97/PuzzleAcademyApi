@@ -57,6 +57,7 @@ jobs:
           RIOT_API_KEY: ${{ secrets.RIOT_API_KEY }}
           RIOT_URL_ACCOUNT: americas.api.riotgames.com
           RIOT_URL_SUMMONER: br1.api.riotgames.com
+          SEASON_START_DATE: ${{ env.SEASON_START_DATE }}
       
       - name: Stop Containers
         if: always()

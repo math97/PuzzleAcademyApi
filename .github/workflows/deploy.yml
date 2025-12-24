@@ -51,11 +51,12 @@ jobs:
           DOCKER_IMAGE_NAME: ${{ vars.DOCKER_IMAGE_NAME }}
           COMPOSE_FILE_CONTENT: ${{ env.COMPOSE_FILE_CONTENT }}
           APP_PORT: ${{ vars.APP_PORT }}
+          SEASON_START_DATE: ${{ vars.SEASON_START_DATE }}
         with:
           host: ${{ vars.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: DATABASE_URL,RIOT_API_KEY,RIOT_REGION,RIOT_URL_ACCOUNT,RIOT_URL_SUMMONER,DOCKER_IMAGE_NAME,COMPOSE_FILE_CONTENT,APP_PORT
+          envs: DATABASE_URL,RIOT_API_KEY,RIOT_REGION,RIOT_URL_ACCOUNT,RIOT_URL_SUMMONER,DOCKER_IMAGE_NAME,COMPOSE_FILE_CONTENT,APP_PORT,SEASON_START_DATE
           script: |
             cd /home/${{ secrets.VPS_USER }}/puzzle-api
             
@@ -69,6 +70,7 @@ jobs:
             export RIOT_URL_SUMMONER="$RIOT_URL_SUMMONER"
             export DOCKER_IMAGE_NAME="$DOCKER_IMAGE_NAME"
             export APP_PORT="$APP_PORT"
+            export SEASON_START_DATE="$SEASON_START_DATE"
 
             docker pull "${DOCKER_IMAGE_NAME}:latest"
 

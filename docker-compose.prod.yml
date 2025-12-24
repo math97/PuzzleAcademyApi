@@ -15,6 +15,7 @@ services:
       RIOT_URL_ACCOUNT: "${RIOT_URL_ACCOUNT}"
       RIOT_URL_SUMMONER: "${RIOT_URL_SUMMONER}"
       PORT: "${APP_PORT}"
+      SEASON_START_DATE: "${SEASON_START_DATE}"
     networks:
       - m2a_network
     restart: always
