@@ -18,7 +18,30 @@ class FakeRiotApiGateway implements RiotApiGateway {
     return null;
   }
   async getLeagueEntries(puuid: string) {
+    if (puuid === 'valid-puuid') {
+      return [
+        {
+          leagueId: 'league-id',
+          queueType: 'RANKED_SOLO_5x5',
+          tier: 'GOLD',
+          rank: 'IV',
+          leaguePoints: 50,
+          wins: 10,
+          losses: 5,
+          hotStreak: false,
+        },
+      ];
+    }
     return [];
+  }
+  async getTopChampionMasteries(puuid: string) {
+    return [];
+  }
+  async getMatchesByPuuid(puuid: string) {
+    return [];
+  }
+  async getMatchDetails(matchId: string) {
+    return null;
   }
 }
 
@@ -52,6 +75,9 @@ describe('Get Summoner Details', () => {
     expect(result).toBeTruthy();
     expect(inMemoryPlayersRepository.items[0].summonerLevel).toBe(100);
     expect(inMemoryPlayersRepository.items[0].profileIconId).toBe(1234);
+    expect(inMemoryPlayersRepository.items[0].tier).toBe('GOLD');
+    expect(inMemoryPlayersRepository.items[0].rank).toBe('IV');
+    expect(inMemoryPlayersRepository.items[0].leaguePoints).toBe(50);
   });
 
   it('should not be able to get details of a non-existent player', async () => {

@@ -13,7 +13,7 @@ export class GetSummonerDetailsUseCase {
   constructor(
     private playersRepository: PlayersRepository,
     private riotApiGateway: RiotApiGateway,
-  ) {}
+  ) { }
 
   async execute({ gameName, tag }: GetSummonerDetailsRequest): Promise<Player> {
     const player = await this.playersRepository.findByNameAndTag(gameName, tag);
@@ -32,7 +32,21 @@ export class GetSummonerDetailsUseCase {
         summonerLevel: details.summonerLevel,
       });
 
-      // TODO: Update rank and tier when available (future plans)
+      const leagueEntries = await this.riotApiGateway.getLeagueEntries(
+        player.riotPuiid,
+      );
+
+      const rankedEntry = leagueEntries.find(
+        (entry) => entry.queueType === 'RANKED_SOLO_5x5',
+      );
+
+      if (rankedEntry) {
+        player.updateStats({
+          tier: rankedEntry.tier,
+          rank: rankedEntry.rank,
+          leaguePoints: rankedEntry.leaguePoints,
+        });
+      }
 
       await this.playersRepository.save(player);
     }
