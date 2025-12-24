@@ -98,4 +98,15 @@ export class Snapshot extends Entity<SnapshotProps> {
 
     return tierValue + rankValue + leaguePoints;
   }
+
+  hasSameStats(other: Snapshot): boolean {
+    return (
+      this.tier === other.tier &&
+      this.rank === other.rank &&
+      this.leaguePoints === other.leaguePoints &&
+      this.wins === other.wins &&
+      this.losses === other.losses &&
+      this.hotStreak === other.hotStreak
+    );
+  }
 }

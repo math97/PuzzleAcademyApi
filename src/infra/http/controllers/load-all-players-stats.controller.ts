@@ -11,9 +11,7 @@ export class LoadAllPlayersStatsController {
   @HttpCode(202)
   @ApiOperation({ summary: 'Load stats for all players from Riot API' })
   @ApiResponse({ status: 202, description: 'Process started successfully.' })
-  async handle() {
-    // The requirement says "Load for stats for all players".
-    // This endpoint will be triggered by n8n as a job, so we return immediately.
-    this.loadAllPlayersStats.execute();
+  async handle(): Promise<void> {
+    await this.loadAllPlayersStats.execute();
   }
 }

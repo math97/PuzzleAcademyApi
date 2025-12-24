@@ -20,7 +20,7 @@ export class LoadPlayerStatsUseCase {
     private playersRepository: PlayersRepository,
     private riotApiGateway: RiotApiGateway,
     private snapshotRepository: SnapshotRepository,
-  ) {}
+  ) { }
 
   async execute({
     playerId,
@@ -34,6 +34,18 @@ export class LoadPlayerStatsUseCase {
     const leagueEntries = await this.riotApiGateway.getLeagueEntries(
       player.riotPuiid,
     );
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const todaysSnapshots =
+      await this.snapshotRepository.findByPlayerIdAndDateRange(
+        playerId,
+        today,
+        tomorrow,
+      );
 
     const snapshots: Snapshot[] = [];
 
@@ -60,16 +72,24 @@ export class LoadPlayerStatsUseCase {
           totalPoints,
         });
 
-        await this.snapshotRepository.create(snapshot);
-        snapshots.push(snapshot);
+        const latestSnapshot = todaysSnapshots
+          .filter((s) => s.queueType === entry.queueType)
+          .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
 
-        if (entry.queueType === 'RANKED_SOLO_5x5') {
-          player.updateStats({
-            tier: entry.tier,
-            rank: entry.rank,
-            leaguePoints: entry.leaguePoints,
-          });
-          await this.playersRepository.save(player);
+        const hasDiff = !latestSnapshot || !latestSnapshot.hasSameStats(snapshot);
+
+        if (hasDiff) {
+          await this.snapshotRepository.create(snapshot);
+          snapshots.push(snapshot);
+
+          if (entry.queueType === 'RANKED_SOLO_5x5') {
+            player.updateStats({
+              tier: entry.tier,
+              rank: entry.rank,
+              leaguePoints: entry.leaguePoints,
+            });
+            await this.playersRepository.save(player);
+          }
         }
       }
     }
