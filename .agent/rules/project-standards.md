@@ -1,3 +1,7 @@
+---
+trigger: always_on
+---
+
 # Project Standards
 
 This document serves as the source of truth for the architectural and coding standards of the **PuzzleAcademyApi** project. All developers and agents contributing to this codebase must adhere to these guidelines to ensure maintainability, scalability, and consistency.
@@ -96,7 +100,10 @@ src/
 
 ### Testing
 *   **Vitest**: Test runner for Unit and E2E tests.
-    *   **Unit Tests**: Focus on Domain and Application layers. Mock dependencies.
+    *   **Unit Tests**: Focus on Domain and Application layers.
+        *   **Dependencies**: Use **In-Memory Repositories** for database dependencies.
+        *   **Do NOT mock the database layer** (e.g., do not mock PrismaClient directly in unit tests).
+        *   Mock external services (e.g., API calls) using fakes or spies.
     *   **E2E Tests**: Test the full flow from Controller to Database (using test DB).
 
 ### Linting & Formatting
