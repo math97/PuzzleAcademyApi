@@ -41,37 +41,74 @@ export class LoadPlayerMatchesUseCase {
         );
 
         const matchPromises = matchIds.map(async (matchId) => {
-            const existingMatch = await this.matchesRepository.findByRiotMatchId(matchId);
-            if (existingMatch) {
-                return existingMatch;
+            const match = await this.matchesRepository.findByRiotMatchId(matchId);
+
+            if (match) {
+                // Match exists. Check if current player is participating.
+                const existingParticipant = match.participants.find(p => p.puuid === player.riotPuiid);
+
+                if (existingParticipant) {
+                    // Already processed for this player.
+                    return match;
+                }
+
+                // Match exists but player is not linked (or we need to update).
+                try {
+                    const matchDetails = await this.riotApiGateway.getMatchDetails(matchId);
+                    const newParticipantDto = matchDetails.info.participants.find((p: any) => p.puuid === player.riotPuiid);
+
+                    if (!newParticipantDto) {
+                        return null;
+                    }
+
+                    const newParticipant = MatchParticipant.create({
+                        puuid: newParticipantDto.puuid,
+                        summonerName: newParticipantDto.riotIdGameName || newParticipantDto.summonerName,
+                        championName: newParticipantDto.championName,
+                        kills: newParticipantDto.kills,
+                        deaths: newParticipantDto.deaths,
+                        assists: newParticipantDto.assists,
+                        win: newParticipantDto.win,
+                        totalDamageDealt: newParticipantDto.totalDamageDealt,
+                        visionScore: newParticipantDto.visionScore,
+                    });
+
+                    // Add to match entity
+                    match.addParticipant(newParticipant);
+
+                    await this.matchesRepository.save(match);
+                    return match;
+                } catch (error) {
+                    console.error(`Failed to update match ${matchId} for player ${player.id}`, error);
+                    return null;
+                }
             }
 
+            // Match does not exist. Create it.
             try {
                 const matchDetails = await this.riotApiGateway.getMatchDetails(matchId);
 
-                const participantdtos = matchDetails.info.participants;
+                const participantDto = matchDetails.info.participants.find((p: any) => p.puuid === player.riotPuiid);
 
-                const validParticipants = participantdtos.filter((p: any) => p.puuid === player.riotPuiid);
-
-                if (validParticipants.length === 0) {
+                if (!participantDto) {
                     return null;
                 }
 
-                const participantsToSave = validParticipants.map((p: any) =>
+                const participantsToSave = [
                     MatchParticipant.create({
-                        puuid: p.puuid,
-                        summonerName: p.riotIdGameName || p.summonerName,
-                        championName: p.championName,
-                        kills: p.kills,
-                        deaths: p.deaths,
-                        assists: p.assists,
-                        win: p.win,
-                        totalDamageDealt: p.totalDamageDealt,
-                        visionScore: p.visionScore,
+                        puuid: participantDto.puuid,
+                        summonerName: participantDto.riotIdGameName || participantDto.summonerName,
+                        championName: participantDto.championName,
+                        kills: participantDto.kills,
+                        deaths: participantDto.deaths,
+                        assists: participantDto.assists,
+                        win: participantDto.win,
+                        totalDamageDealt: participantDto.totalDamageDealt,
+                        visionScore: participantDto.visionScore,
                     })
-                );
+                ];
 
-                const match = Match.create({
+                const newMatch = Match.create({
                     riotMatchId: matchId,
                     gameCreation: new Date(matchDetails.info.gameCreation),
                     gameDuration: matchDetails.info.gameDuration,
@@ -79,8 +116,8 @@ export class LoadPlayerMatchesUseCase {
                     participants: participantsToSave,
                 });
 
-                await this.matchesRepository.create(match);
-                return match;
+                await this.matchesRepository.create(newMatch);
+                return newMatch;
 
             } catch (error) {
                 console.error(`Failed to process match ${matchId}`, error);

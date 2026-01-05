@@ -124,7 +124,7 @@ export class Player extends Entity<PlayerProps> {
       totalAssists += match.assists;
 
       const kda = match.deaths === 0
-        ? match.kills + match.assists // Perfect KDA logic: Sum of K+A (or could be a high fixed multiplier)
+        ? match.kills + match.assists
         : (match.kills + match.assists) / match.deaths;
 
       if (kda > bestMatchKda) {

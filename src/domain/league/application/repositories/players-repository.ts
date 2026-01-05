@@ -10,4 +10,5 @@ export abstract class PlayersRepository {
   abstract findByNameAndTag(name: string, tag: string): Promise<Player | null>;
   abstract findAll(params: PaginationParams): Promise<PaginatedResult<Player>>;
   abstract findAllIds(): Promise<string[]>;
+  abstract findManyByPuuids(puuids: string[]): Promise<Player[]>;
 }

@@ -127,4 +127,41 @@ export class PrismaMatchesRepository implements MatchesRepository {
             );
         });
     }
+
+    async save(match: Match): Promise<void> {
+        // We only need to ensure new participants are added.
+        const participants = match.participants;
+
+        for (const participant of participants) {
+            await this.prisma.matchParticipant.upsert({
+                where: {
+                    id: participant.id.toString(),
+                },
+                create: {
+                    id: participant.id.toString(),
+                    matchId: match.id.toString(),
+                    puuid: participant.puuid,
+                    summonerName: participant.summonerName,
+                    championName: participant.championName,
+                    kills: participant.kills,
+                    deaths: participant.deaths,
+                    assists: participant.assists,
+                    win: participant.win,
+                    totalDamageDealt: participant.totalDamageDealt,
+                    visionScore: participant.visionScore,
+                },
+                update: {
+                    puuid: participant.puuid,
+                    summonerName: participant.summonerName,
+                    championName: participant.championName,
+                    kills: participant.kills,
+                    deaths: participant.deaths,
+                    assists: participant.assists,
+                    win: participant.win,
+                    totalDamageDealt: participant.totalDamageDealt,
+                    visionScore: participant.visionScore,
+                }
+            });
+        }
+    }
 }

@@ -8,7 +8,7 @@ import { PrismaPlayerMapper } from '../mappers/prisma-player-mapper';
 
 @Injectable()
 export class PrismaPlayerRepository implements PlayersRepository {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async insert(player: Player): Promise<void> {
     const data = PrismaPlayerMapper.toPrisma(player);
@@ -106,5 +106,15 @@ export class PrismaPlayerRepository implements PlayersRepository {
     });
 
     return players.map((player) => player.id);
+  }
+
+  async findManyByPuuids(puuids: string[]): Promise<Player[]> {
+    const players = await this.prisma.player.findMany({
+      where: {
+        puuid: { in: puuids },
+      },
+    });
+
+    return players.map(PrismaPlayerMapper.toDomain);
   }
 }

@@ -31,6 +31,10 @@ export class Match extends Entity<MatchProps> {
         return this.props.participants;
     }
 
+    addParticipant(participant: MatchParticipant) {
+        this.props.participants.push(participant);
+    }
+
     static create(props: MatchProps, id?: UniqueEntityId) {
         const match = new Match(props, id);
         return match;
