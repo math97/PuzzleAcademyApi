@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Post, Param, Query, HttpCode } from '@nestjs/common';
 import { LoadPlayerMatchesUseCase } from '@/domain/league/application/use-cases/load-player-matches';
 import { MatchPresenter } from '../presenters/match-presenter';
 
@@ -6,7 +6,8 @@ import { MatchPresenter } from '../presenters/match-presenter';
 export class LoadPlayerMatchesController {
     constructor(private loadPlayerMatchesUseCase: LoadPlayerMatchesUseCase) { }
 
-    @Get()
+    @Post('/load')
+    @HttpCode(200)
     async handle(
         @Param('id') id: string,
         @Query('startTime') startTime?: string,
