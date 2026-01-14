@@ -1,5 +1,8 @@
 import { Player as PrismaPlayer, Prisma } from '@prisma/client';
-import { ChampionMastery, Player } from '@/domain/league/enterprise/entities/player';
+import {
+  ChampionMastery,
+  Player,
+} from '@/domain/league/enterprise/entities/player';
 import { UniqueEntityId } from '@/core/entities/unique-entity-id';
 
 export class PrismaPlayerMapper {
@@ -14,7 +17,11 @@ export class PrismaPlayerMapper {
         tier: raw.tier,
         rank: raw.rank,
         leaguePoints: null,
-        championMasteries: raw.championMasteries as unknown as ChampionMastery[],
+        flexTier: raw.flexTier,
+        flexRank: raw.flexRank,
+        flexLeaguePoints: raw.flexLeaguePoints,
+        championMasteries:
+          raw.championMasteries as unknown as ChampionMastery[],
         stats: {
           totalKills: raw.totalKills,
           totalDeaths: raw.totalDeaths,
@@ -37,7 +44,8 @@ export class PrismaPlayerMapper {
       tier: player.tier,
       rank: player.rank,
       region: 'BR1',
-      championMasteries: player.championMasteries as unknown as Prisma.NullableJsonNullValueInput,
+      championMasteries:
+        player.championMasteries as unknown as Prisma.NullableJsonNullValueInput,
       totalKills: player.stats?.totalKills || 0,
       totalDeaths: player.stats?.totalDeaths || 0,
       totalAssists: player.stats?.totalAssists || 0,

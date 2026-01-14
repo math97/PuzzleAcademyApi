@@ -9,6 +9,9 @@ export interface PlayerProps {
   tier?: string | null;
   rank?: string | null;
   leaguePoints?: number | null;
+  flexTier?: string | null;
+  flexRank?: string | null;
+  flexLeaguePoints?: number | null;
   profileIconId?: number | null;
   summonerLevel?: number | null;
   championMasteries?: ChampionMastery[];
@@ -52,6 +55,18 @@ export class Player extends Entity<PlayerProps> {
     return this.props.leaguePoints;
   }
 
+  get flexTier() {
+    return this.props.flexTier;
+  }
+
+  get flexRank() {
+    return this.props.flexRank;
+  }
+
+  get flexLeaguePoints() {
+    return this.props.flexLeaguePoints;
+  }
+
   get profileIconId() {
     return this.props.profileIconId;
   }
@@ -71,7 +86,15 @@ export class Player extends Entity<PlayerProps> {
   static create(
     props: Optional<
       PlayerProps,
-      'tier' | 'rank' | 'leaguePoints' | 'profileIconId' | 'summonerLevel' | 'stats'
+      | 'tier'
+      | 'rank'
+      | 'leaguePoints'
+      | 'flexTier'
+      | 'flexRank'
+      | 'flexLeaguePoints'
+      | 'profileIconId'
+      | 'summonerLevel'
+      | 'stats'
     >,
     id?: UniqueEntityId,
   ) {
@@ -81,6 +104,9 @@ export class Player extends Entity<PlayerProps> {
         tier: props.tier ?? null,
         rank: props.rank ?? null,
         leaguePoints: props.leaguePoints ?? null,
+        flexTier: props.flexTier ?? null,
+        flexRank: props.flexRank ?? null,
+        flexLeaguePoints: props.flexLeaguePoints ?? null,
         profileIconId: props.profileIconId ?? null,
         summonerLevel: props.summonerLevel ?? null,
         championMasteries: props.championMasteries ?? [],
@@ -108,11 +134,19 @@ export class Player extends Entity<PlayerProps> {
     this.props.leaguePoints = stats.leaguePoints;
   }
 
+  updateFlexStats(stats: { tier: string; rank: string; leaguePoints: number }) {
+    this.props.flexTier = stats.tier;
+    this.props.flexRank = stats.rank;
+    this.props.flexLeaguePoints = stats.leaguePoints;
+  }
+
   updateChampionMasteries(masteries: ChampionMastery[]) {
     this.props.championMasteries = masteries;
   }
 
-  updateAggregatedStats(matches: { kills: number; deaths: number; assists: number }[]) {
+  updateAggregatedStats(
+    matches: { kills: number; deaths: number; assists: number }[],
+  ) {
     let totalKills = 0;
     let totalDeaths = 0;
     let totalAssists = 0;
@@ -123,9 +157,10 @@ export class Player extends Entity<PlayerProps> {
       totalDeaths += match.deaths;
       totalAssists += match.assists;
 
-      const kda = match.deaths === 0
-        ? match.kills + match.assists
-        : (match.kills + match.assists) / match.deaths;
+      const kda =
+        match.deaths === 0
+          ? match.kills + match.assists
+          : (match.kills + match.assists) / match.deaths;
 
       if (kda > bestMatchKda) {
         bestMatchKda = Number(kda.toFixed(2));

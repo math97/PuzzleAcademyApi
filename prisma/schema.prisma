@@ -20,6 +20,9 @@ model Player {
   profileIconId Int?
   tier          String?
   rank          String?
+  flexTier      String?
+  flexRank      String?
+  flexLeaguePoints Int?
   region        String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -64,6 +67,8 @@ model MatchParticipant {
   player Player? @relation(fields: [puuid], references: [puuid])
 
   @@map("match_participants")
+  @@index([puuid])
+  @@index([matchId])
 }
 
 model Snapshot {
