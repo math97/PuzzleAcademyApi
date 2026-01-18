@@ -7,161 +7,161 @@ import { UniqueEntityId } from '@/core/entities/unique-entity-id';
 
 @Injectable()
 export class PrismaMatchesRepository implements MatchesRepository {
-    constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
-    async create(match: Match): Promise<void> {
-        await this.prisma.match.create({
-            data: {
-                id: match.id.toString(),
-                riotMatchId: match.riotMatchId,
-                gameCreation: match.gameCreation,
-                gameDuration: match.gameDuration,
-                gameMode: match.gameMode,
-                participants: {
-                    create: match.participants.map((participant) => ({
-                        id: participant.id.toString(),
-                        puuid: participant.puuid,
-                        summonerName: participant.summonerName,
-                        championName: participant.championName,
-                        kills: participant.kills,
-                        deaths: participant.deaths,
-                        assists: participant.assists,
-                        win: participant.win,
-                        totalDamageDealt: participant.totalDamageDealt,
-                        visionScore: participant.visionScore,
-                    })),
-                },
-            },
-        });
+  async create(match: Match): Promise<void> {
+    await this.prisma.match.create({
+      data: {
+        id: match.id.toString(),
+        riotMatchId: match.riotMatchId,
+        gameCreation: match.gameCreation,
+        gameDuration: match.gameDuration,
+        gameMode: match.gameMode,
+        participants: {
+          create: match.participants.map((participant) => ({
+            id: participant.id.toString(),
+            puuid: participant.puuid,
+            summonerName: participant.summonerName,
+            championName: participant.championName,
+            kills: participant.kills,
+            deaths: participant.deaths,
+            assists: participant.assists,
+            win: participant.win,
+            totalDamageDealt: participant.totalDamageDealt,
+            visionScore: participant.visionScore,
+          })),
+        },
+      },
+    });
+  }
+
+  async findByRiotMatchId(riotMatchId: string): Promise<Match | null> {
+    const match = await this.prisma.match.findUnique({
+      where: {
+        riotMatchId,
+      },
+      include: {
+        participants: true,
+      },
+    });
+
+    if (!match) {
+      return null;
     }
 
-    async findByRiotMatchId(riotMatchId: string): Promise<Match | null> {
-        const match = await this.prisma.match.findUnique({
-            where: {
-                riotMatchId,
-            },
-            include: {
-                participants: true,
-            },
-        });
-
-        if (!match) {
-            return null;
-        }
-
-        return Match.create(
+    return Match.create(
+      {
+        riotMatchId: match.riotMatchId,
+        gameCreation: match.gameCreation,
+        gameDuration: match.gameDuration,
+        gameMode: match.gameMode,
+        participants: match.participants.map((p) =>
+          MatchParticipant.create(
             {
-                riotMatchId: match.riotMatchId,
-                gameCreation: match.gameCreation,
-                gameDuration: match.gameDuration,
-                gameMode: match.gameMode,
-                participants: match.participants.map((p) =>
-                    MatchParticipant.create(
-                        {
-                            puuid: p.puuid,
-                            summonerName: p.summonerName,
-                            championName: p.championName,
-                            kills: p.kills,
-                            deaths: p.deaths,
-                            assists: p.assists,
-                            win: p.win,
-                            totalDamageDealt: p.totalDamageDealt,
-                            visionScore: p.visionScore,
-                        },
-                        new UniqueEntityId(p.id),
-                    ),
-                ),
+              puuid: p.puuid,
+              summonerName: p.summonerName,
+              championName: p.championName,
+              kills: p.kills,
+              deaths: p.deaths,
+              assists: p.assists,
+              win: p.win,
+              totalDamageDealt: p.totalDamageDealt,
+              visionScore: p.visionScore,
             },
-            new UniqueEntityId(match.id),
-        );
+            new UniqueEntityId(p.id),
+          ),
+        ),
+      },
+      new UniqueEntityId(match.id),
+    );
+  }
+
+  async findManyByPlayerId(playerId: string): Promise<Match[]> {
+    const player = await this.prisma.player.findUnique({
+      where: { id: playerId },
+    });
+
+    if (!player) {
+      return [];
     }
 
-    async findManyByPlayerId(playerId: string): Promise<Match[]> {
-        const player = await this.prisma.player.findUnique({
-            where: { id: playerId },
-        });
+    const participants = await this.prisma.matchParticipant.findMany({
+      where: {
+        puuid: player.puuid,
+      },
+      include: {
+        match: {
+          include: {
+            participants: true,
+          },
+        },
+      },
+    });
 
-        if (!player) {
-            return [];
-        }
+    return participants.map((p) => {
+      const match = p.match;
+      return Match.create(
+        {
+          riotMatchId: match.riotMatchId,
+          gameCreation: match.gameCreation,
+          gameDuration: match.gameDuration,
+          gameMode: match.gameMode,
+          participants: match.participants.map((mp) =>
+            MatchParticipant.create(
+              {
+                puuid: mp.puuid,
+                summonerName: mp.summonerName,
+                championName: mp.championName,
+                kills: mp.kills,
+                deaths: mp.deaths,
+                assists: mp.assists,
+                win: mp.win,
+                totalDamageDealt: mp.totalDamageDealt,
+                visionScore: mp.visionScore,
+              },
+              new UniqueEntityId(mp.id),
+            ),
+          ),
+        },
+        new UniqueEntityId(match.id),
+      );
+    });
+  }
 
-        const participants = await this.prisma.matchParticipant.findMany({
-            where: {
-                puuid: player.puuid,
-            },
-            include: {
-                match: {
-                    include: {
-                        participants: true,
-                    },
-                },
-            },
-        });
+  async save(match: Match): Promise<void> {
+    // We only need to ensure new participants are added.
+    const participants = match.participants;
 
-        return participants.map((p) => {
-            const match = p.match;
-            return Match.create(
-                {
-                    riotMatchId: match.riotMatchId,
-                    gameCreation: match.gameCreation,
-                    gameDuration: match.gameDuration,
-                    gameMode: match.gameMode,
-                    participants: match.participants.map((mp) =>
-                        MatchParticipant.create(
-                            {
-                                puuid: mp.puuid,
-                                summonerName: mp.summonerName,
-                                championName: mp.championName,
-                                kills: mp.kills,
-                                deaths: mp.deaths,
-                                assists: mp.assists,
-                                win: mp.win,
-                                totalDamageDealt: mp.totalDamageDealt,
-                                visionScore: mp.visionScore,
-                            },
-                            new UniqueEntityId(mp.id),
-                        ),
-                    ),
-                },
-                new UniqueEntityId(match.id),
-            );
-        });
+    for (const participant of participants) {
+      await this.prisma.matchParticipant.upsert({
+        where: {
+          id: participant.id.toString(),
+        },
+        create: {
+          id: participant.id.toString(),
+          matchId: match.id.toString(),
+          puuid: participant.puuid,
+          summonerName: participant.summonerName,
+          championName: participant.championName,
+          kills: participant.kills,
+          deaths: participant.deaths,
+          assists: participant.assists,
+          win: participant.win,
+          totalDamageDealt: participant.totalDamageDealt,
+          visionScore: participant.visionScore,
+        },
+        update: {
+          puuid: participant.puuid,
+          summonerName: participant.summonerName,
+          championName: participant.championName,
+          kills: participant.kills,
+          deaths: participant.deaths,
+          assists: participant.assists,
+          win: participant.win,
+          totalDamageDealt: participant.totalDamageDealt,
+          visionScore: participant.visionScore,
+        },
+      });
     }
-
-    async save(match: Match): Promise<void> {
-        // We only need to ensure new participants are added.
-        const participants = match.participants;
-
-        for (const participant of participants) {
-            await this.prisma.matchParticipant.upsert({
-                where: {
-                    id: participant.id.toString(),
-                },
-                create: {
-                    id: participant.id.toString(),
-                    matchId: match.id.toString(),
-                    puuid: participant.puuid,
-                    summonerName: participant.summonerName,
-                    championName: participant.championName,
-                    kills: participant.kills,
-                    deaths: participant.deaths,
-                    assists: participant.assists,
-                    win: participant.win,
-                    totalDamageDealt: participant.totalDamageDealt,
-                    visionScore: participant.visionScore,
-                },
-                update: {
-                    puuid: participant.puuid,
-                    summonerName: participant.summonerName,
-                    championName: participant.championName,
-                    kills: participant.kills,
-                    deaths: participant.deaths,
-                    assists: participant.assists,
-                    win: participant.win,
-                    totalDamageDealt: participant.totalDamageDealt,
-                    visionScore: participant.visionScore,
-                }
-            });
-        }
-    }
+  }
 }

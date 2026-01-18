@@ -20,12 +20,14 @@
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts"
   },
   "dependencies": {
+    "@golevelup/nestjs-rabbitmq": "^7.1.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/swagger": "^11.2.3",
     "@prisma/client": "^5.22.0",
+    "amqplib": "^0.10.9",
     "bottleneck": "^2.19.5",
     "nestjs-zod": "^5.0.1",
     "reflect-metadata": "^0.2.2",

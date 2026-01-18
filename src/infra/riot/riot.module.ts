@@ -20,4 +20,4 @@ import { BottleneckRateLimiter } from '../rate-limiting/bottleneck-rate-limiter'
   ],
   exports: [RiotApiGateway],
 })
-export class RiotModule { }
+export class RiotModule {}

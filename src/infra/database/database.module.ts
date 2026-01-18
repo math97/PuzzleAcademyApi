@@ -23,6 +23,11 @@ import { PrismaMatchesRepository } from './prisma/repositories/prisma-matches-re
       useClass: PrismaMatchesRepository,
     },
   ],
-  exports: [PlayersRepository, SnapshotRepository, MatchesRepository, PrismaService],
+  exports: [
+    PlayersRepository,
+    SnapshotRepository,
+    MatchesRepository,
+    PrismaService,
+  ],
 })
-export class DatabaseModule { }
+export class DatabaseModule {}

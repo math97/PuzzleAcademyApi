@@ -33,7 +33,7 @@ export class FetchAllPlayersController {
   constructor(
     private fetchAllPlayersUseCase: FetchAllPlayersUseCase,
     private envService: EnvService,
-  ) { }
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Fetch all players with pagination' })

@@ -3,40 +3,40 @@ import { UniqueEntityId } from '@/core/entities/unique-entity-id';
 import { MatchParticipant } from './match-participant';
 
 export interface MatchProps {
-    riotMatchId: string;
-    gameCreation: Date;
-    gameDuration: number;
-    gameMode: string;
-    participants: MatchParticipant[];
+  riotMatchId: string;
+  gameCreation: Date;
+  gameDuration: number;
+  gameMode: string;
+  participants: MatchParticipant[];
 }
 
 export class Match extends Entity<MatchProps> {
-    get riotMatchId() {
-        return this.props.riotMatchId;
-    }
+  get riotMatchId() {
+    return this.props.riotMatchId;
+  }
 
-    get gameCreation() {
-        return this.props.gameCreation;
-    }
+  get gameCreation() {
+    return this.props.gameCreation;
+  }
 
-    get gameDuration() {
-        return this.props.gameDuration;
-    }
+  get gameDuration() {
+    return this.props.gameDuration;
+  }
 
-    get gameMode() {
-        return this.props.gameMode;
-    }
+  get gameMode() {
+    return this.props.gameMode;
+  }
 
-    get participants() {
-        return this.props.participants;
-    }
+  get participants() {
+    return this.props.participants;
+  }
 
-    addParticipant(participant: MatchParticipant) {
-        this.props.participants.push(participant);
-    }
+  addParticipant(participant: MatchParticipant) {
+    this.props.participants.push(participant);
+  }
 
-    static create(props: MatchProps, id?: UniqueEntityId) {
-        const match = new Match(props, id);
-        return match;
-    }
+  static create(props: MatchProps, id?: UniqueEntityId) {
+    const match = new Match(props, id);
+    return match;
+  }
 }

@@ -13,6 +13,7 @@ export const envSchema = z.object({
   ]),
   RIOT_URL_SUMMONER: z.enum(['br1.api.riotgames.com']),
   SEASON_START_DATE: z.string(),
+  RABBITMQ_URL: z.string().url(),
 });
 
 export type Env = z.infer<typeof envSchema>;

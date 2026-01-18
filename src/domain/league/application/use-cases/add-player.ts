@@ -24,7 +24,7 @@ export class AddPlayerUseCase {
   constructor(
     private playersRepository: PlayersRepository,
     private riotApiGateway: RiotApiGateway,
-  ) { }
+  ) {}
 
   async execute({
     name,

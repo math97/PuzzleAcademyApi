@@ -32,7 +32,7 @@ export class FetchAllPlayersUseCase {
   constructor(
     private playersRepository: PlayersRepository,
     private snapshotRepository: SnapshotRepository,
-  ) { }
+  ) {}
 
   async execute({
     page,
@@ -109,9 +109,7 @@ export class FetchAllPlayersUseCase {
     return { startDate: startOfDay, endDate: endOfDay };
   }
 
-  private calculateStats(
-    snapshots: Snapshot[],
-  ): PlayerStats {
+  private calculateStats(snapshots: Snapshot[]): PlayerStats {
     let pointsLostOrWon = 0;
 
     if (snapshots.length > 0) {

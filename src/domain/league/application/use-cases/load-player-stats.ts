@@ -20,7 +20,7 @@ export class LoadPlayerStatsUseCase {
     private playersRepository: PlayersRepository,
     private riotApiGateway: RiotApiGateway,
     private snapshotRepository: SnapshotRepository,
-  ) { }
+  ) {}
 
   async execute({
     playerId,
@@ -76,7 +76,8 @@ export class LoadPlayerStatsUseCase {
           .filter((s) => s.queueType === entry.queueType)
           .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
 
-        const hasDiff = !latestSnapshot || !latestSnapshot.hasSameStats(snapshot);
+        const hasDiff =
+          !latestSnapshot || !latestSnapshot.hasSameStats(snapshot);
 
         if (hasDiff) {
           await this.snapshotRepository.create(snapshot);

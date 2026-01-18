@@ -13,7 +13,7 @@ export class GetSummonerDetailsUseCase {
   constructor(
     private playersRepository: PlayersRepository,
     private riotApiGateway: RiotApiGateway,
-  ) { }
+  ) {}
 
   async execute({ gameName, tag }: GetSummonerDetailsRequest): Promise<Player> {
     const player = await this.playersRepository.findByNameAndTag(gameName, tag);

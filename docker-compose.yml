@@ -10,6 +10,18 @@ services:
       - 5432:5432
     volumes:
       - ./data/pg:/data/postgres
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: puzzle
+      RABBITMQ_DEFAULT_PASS: puzzle
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
   # api:
   #   build: .
   #   ports:
@@ -22,3 +34,4 @@ services:
 
 volumes:
   pg_data:
+  rabbitmq_data:

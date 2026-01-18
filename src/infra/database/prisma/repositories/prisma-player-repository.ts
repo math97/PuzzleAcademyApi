@@ -8,7 +8,7 @@ import { PrismaPlayerMapper } from '../mappers/prisma-player-mapper';
 
 @Injectable()
 export class PrismaPlayerRepository implements PlayersRepository {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async insert(player: Player): Promise<void> {
     const data = PrismaPlayerMapper.toPrisma(player);

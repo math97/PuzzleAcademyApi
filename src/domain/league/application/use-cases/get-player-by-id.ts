@@ -30,7 +30,7 @@ export class GetPlayerByIdUseCase {
   constructor(
     private playersRepository: PlayersRepository,
     private snapshotRepository: SnapshotRepository,
-  ) { }
+  ) {}
 
   async execute({
     id,
