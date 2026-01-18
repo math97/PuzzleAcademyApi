@@ -7,6 +7,9 @@ import { UniqueEntityId } from '@/core/entities/unique-entity-id';
 import { Match } from '../../enterprise/entities/match';
 import { MatchParticipant } from '../../enterprise/entities/match-participant';
 
+const RANKED_SOLO_QUEUE = 420;
+const RANKED_FLEX_QUEUE = 440;
+
 describe('Load Player Matches (Simple Flow)', () => {
     let inMemoryPlayersRepository: InMemoryPlayersRepository;
     let inMemoryMatchesRepository: InMemoryMatchesRepository;
@@ -21,7 +24,7 @@ describe('Load Player Matches (Simple Flow)', () => {
             getSummonerDetails: vi.fn(),
             getLeagueEntries: vi.fn(),
             getTopChampionMasteries: vi.fn(),
-            getMatchesByPuuid: vi.fn(),
+            getMatchesByPuuid: vi.fn().mockResolvedValue([]),
             getMatchDetails: vi.fn(),
         } as unknown as RiotApiGateway;
 
@@ -30,6 +33,65 @@ describe('Load Player Matches (Simple Flow)', () => {
             riotApiGateway,
             inMemoryMatchesRepository,
         );
+    });
+
+    it('should fetch matches from both ranked queues', async () => {
+        // Setup Player
+        const player = Player.create({
+            name: 'Player One',
+            tag: 'TAG1',
+            riotPuiid: 'puuid1',
+        }, new UniqueEntityId('player1'));
+        await inMemoryPlayersRepository.insert(player);
+
+        const getMatchesSpy = vi.fn()
+            .mockResolvedValueOnce(['match1']) // Solo queue
+            .mockResolvedValueOnce(['match2']); // Flex queue
+        riotApiGateway.getMatchesByPuuid = getMatchesSpy;
+        riotApiGateway.getMatchDetails = vi.fn().mockResolvedValue({
+            info: {
+                gameCreation: Date.now(),
+                gameDuration: 1800,
+                gameMode: 'CLASSIC',
+                participants: [{ puuid: 'puuid1', riotIdGameName: 'P1', championName: 'Zed', kills: 1, deaths: 1, assists: 1, win: true, totalDamageDealt: 1000, visionScore: 10 }]
+            }
+        });
+
+        await sut.execute({ playerId: 'player1' });
+
+        expect(getMatchesSpy).toHaveBeenCalledTimes(2);
+        expect(getMatchesSpy).toHaveBeenCalledWith('puuid1', undefined, undefined, RANKED_SOLO_QUEUE);
+        expect(getMatchesSpy).toHaveBeenCalledWith('puuid1', undefined, undefined, RANKED_FLEX_QUEUE);
+    });
+
+    it('should deduplicate matches from both queues', async () => {
+        // Setup Player
+        const player = Player.create({
+            name: 'Player One',
+            tag: 'TAG1',
+            riotPuiid: 'puuid1',
+        }, new UniqueEntityId('player1'));
+        await inMemoryPlayersRepository.insert(player);
+
+        // Same match appears in both queues (edge case)
+        riotApiGateway.getMatchesByPuuid = vi.fn()
+            .mockResolvedValueOnce(['match1', 'match2'])
+            .mockResolvedValueOnce(['match2', 'match3']);
+
+        const getDetailsSpy = vi.fn().mockResolvedValue({
+            info: {
+                gameCreation: Date.now(),
+                gameDuration: 1800,
+                gameMode: 'CLASSIC',
+                participants: [{ puuid: 'puuid1', riotIdGameName: 'P1', championName: 'Zed', kills: 1, deaths: 1, assists: 1, win: true, totalDamageDealt: 1000, visionScore: 10 }]
+            }
+        });
+        riotApiGateway.getMatchDetails = getDetailsSpy;
+
+        await sut.execute({ playerId: 'player1' });
+
+        // Should only fetch details for 3 unique matches, not 4
+        expect(getDetailsSpy).toHaveBeenCalledTimes(3);
     });
 
     it('should create new match and participant for current player', async () => {
@@ -41,8 +103,10 @@ describe('Load Player Matches (Simple Flow)', () => {
         }, new UniqueEntityId('player1'));
         await inMemoryPlayersRepository.insert(player);
 
-        // Mock Riot API
-        riotApiGateway.getMatchesByPuuid = vi.fn().mockResolvedValue(['match1']);
+        // Mock Riot API - returns match1 from solo queue, empty from flex
+        riotApiGateway.getMatchesByPuuid = vi.fn()
+            .mockResolvedValueOnce(['match1'])
+            .mockResolvedValueOnce([]);
         riotApiGateway.getMatchDetails = vi.fn().mockResolvedValue({
             info: {
                 gameCreation: Date.now(),
@@ -112,7 +176,9 @@ describe('Load Player Matches (Simple Flow)', () => {
         await inMemoryMatchesRepository.create(existingMatch);
 
         // Mock Riot API (fetch Details needed for Player 2 data)
-        riotApiGateway.getMatchesByPuuid = vi.fn().mockResolvedValue(['match1']);
+        riotApiGateway.getMatchesByPuuid = vi.fn()
+            .mockResolvedValueOnce(['match1'])
+            .mockResolvedValueOnce([]);
         riotApiGateway.getMatchDetails = vi.fn().mockResolvedValue({
             info: {
                 gameCreation: Date.now(),
@@ -166,7 +232,9 @@ describe('Load Player Matches (Simple Flow)', () => {
         }, new UniqueEntityId('match_id_1'));
         await inMemoryMatchesRepository.create(existingMatch);
 
-        riotApiGateway.getMatchesByPuuid = vi.fn().mockResolvedValue(['match1']);
+        riotApiGateway.getMatchesByPuuid = vi.fn()
+            .mockResolvedValueOnce(['match1'])
+            .mockResolvedValueOnce([]);
 
         // Spy on getMatchDetails to ensure it's NOT called
         const getDetailsSpy = vi.fn();

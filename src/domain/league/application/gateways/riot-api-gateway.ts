@@ -49,6 +49,7 @@ export abstract class RiotApiGateway {
     puuid: string,
     startTime?: number,
     endTime?: number,
+    queue?: number,
   ): Promise<string[]>;
   abstract getMatchDetails(matchId: string): Promise<any>;
 }
