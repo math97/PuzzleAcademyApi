@@ -160,6 +160,7 @@ export class RiotService implements RiotApiGateway {
     puuid: string,
     startTime?: number,
     endTime?: number,
+    queue?: number,
   ): Promise<string[]> {
     return this.rateLimiter.schedule(async () => {
       try {
@@ -173,6 +174,9 @@ export class RiotService implements RiotApiGateway {
         }
         if (endTime) {
           url.searchParams.append('endTime', endTime.toString());
+        }
+        if (queue) {
+          url.searchParams.append('queue', queue.toString());
         }
 
         const response = await fetch(url.toString(), {
