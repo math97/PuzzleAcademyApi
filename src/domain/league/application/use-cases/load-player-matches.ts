@@ -7,6 +7,21 @@ import { MatchParticipant } from '@/domain/league/enterprise/entities/match-part
 
 const RANKED_SOLO_QUEUE = 420;
 const RANKED_FLEX_QUEUE = 440;
+const BATCH_SIZE = 5;
+
+async function processBatches<T, R>(
+  items: T[],
+  batchSize: number,
+  processor: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = [];
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    const batchResults = await Promise.all(batch.map(processor));
+    results.push(...batchResults);
+  }
+  return results;
+}
 
 interface LoadPlayerMatchesUseCaseRequest {
   playerId: string;
@@ -54,7 +69,7 @@ export class LoadPlayerMatchesUseCase {
 
     const matchIds = [...new Set([...soloQueueMatchIds, ...flexQueueMatchIds])];
 
-    const matchPromises = matchIds.map(async (matchId) => {
+    const processMatch = async (matchId: string): Promise<Match | null> => {
       const match = await this.matchesRepository.findByRiotMatchId(matchId);
 
       if (match) {
@@ -150,11 +165,14 @@ export class LoadPlayerMatchesUseCase {
         console.error(`Failed to process match ${matchId}`, error);
         return null;
       }
-    });
+    };
 
-    const matches = (await Promise.all(matchPromises)).filter(
-      (m): m is Match => m !== null,
+    const matchResults = await processBatches(
+      matchIds,
+      BATCH_SIZE,
+      processMatch,
     );
+    const matches = matchResults.filter((m): m is Match => m !== null);
 
     const allPlayerMatches = await this.matchesRepository.findManyByPlayerId(
       player.id.toString(),

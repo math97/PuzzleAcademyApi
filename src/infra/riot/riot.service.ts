@@ -162,13 +162,19 @@ export class RiotService implements RiotApiGateway {
     endTime?: number,
     queue?: number,
   ): Promise<string[]> {
-    return this.rateLimiter.schedule(async () => {
-      try {
+    const PAGE_SIZE = 100; // Max allowed by Riot API
+    const allMatchIds: string[] = [];
+    let start = 0;
+    let hasMoreMatches = true;
+
+    while (hasMoreMatches) {
+      const pageMatchIds = await this.rateLimiter.schedule(async () => {
         const url = new URL(
           `https://${this.riotAccountUrl}/lol/match/v5/matches/by-puuid/${puuid}/ids`,
         );
-        url.searchParams.append('start', '0');
-        url.searchParams.append('count', '20');
+        url.searchParams.append('start', start.toString());
+        url.searchParams.append('count', PAGE_SIZE.toString());
+
         if (startTime) {
           url.searchParams.append('startTime', startTime.toString());
         }
@@ -192,14 +198,19 @@ export class RiotService implements RiotApiGateway {
           );
         }
 
-        const data = await response.json();
-        return data;
-      } catch (error) {
-        throw new InternalServerErrorException(
-          `Error fetching matches: ${error}`,
-        );
+        return response.json() as Promise<string[]>;
+      });
+
+      allMatchIds.push(...pageMatchIds);
+
+      if (pageMatchIds.length < PAGE_SIZE) {
+        hasMoreMatches = false;
+      } else {
+        start += PAGE_SIZE;
       }
-    });
+    }
+
+    return allMatchIds;
   }
 
   async getMatchDetails(matchId: string): Promise<any> {
