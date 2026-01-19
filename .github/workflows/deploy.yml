@@ -52,17 +52,20 @@ jobs:
           COMPOSE_FILE_CONTENT: ${{ env.COMPOSE_FILE_CONTENT }}
           APP_PORT: ${{ vars.APP_PORT }}
           SEASON_START_DATE: ${{ vars.SEASON_START_DATE }}
+          RABBITMQ_URL: ${{ secrets.RABBITMQ_URL }}
+          RABBITMQ_USER: ${{ secrets.RABBITMQ_USER }}
+          RABBITMQ_PASS: ${{ secrets.RABBITMQ_PASS }}
         with:
           host: ${{ vars.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: DATABASE_URL,RIOT_API_KEY,RIOT_REGION,RIOT_URL_ACCOUNT,RIOT_URL_SUMMONER,DOCKER_IMAGE_NAME,COMPOSE_FILE_CONTENT,APP_PORT,SEASON_START_DATE
+          envs: DATABASE_URL,RIOT_API_KEY,RIOT_REGION,RIOT_URL_ACCOUNT,RIOT_URL_SUMMONER,DOCKER_IMAGE_NAME,COMPOSE_FILE_CONTENT,APP_PORT,SEASON_START_DATE,RABBITMQ_URL,RABBITMQ_USER,RABBITMQ_PASS
           script: |
             cd /home/${{ secrets.VPS_USER }}/puzzle-api
-            
+
             # Decode the compose file content
             echo "$COMPOSE_FILE_CONTENT" | base64 -d > docker-compose.yml
-            
+
             export DATABASE_URL="$DATABASE_URL"
             export RIOT_API_KEY="$RIOT_API_KEY"
             export RIOT_REGION="$RIOT_REGION"
@@ -71,6 +74,9 @@ jobs:
             export DOCKER_IMAGE_NAME="$DOCKER_IMAGE_NAME"
             export APP_PORT="$APP_PORT"
             export SEASON_START_DATE="$SEASON_START_DATE"
+            export RABBITMQ_URL="$RABBITMQ_URL"
+            export RABBITMQ_USER="$RABBITMQ_USER"
+            export RABBITMQ_PASS="$RABBITMQ_PASS"
 
             docker pull "${DOCKER_IMAGE_NAME}:latest"
 
@@ -80,5 +86,5 @@ jobs:
               -e DATABASE_URL="$DATABASE_URL" \
               $DOCKER_IMAGE_NAME:latest \
               npx prisma migrate deploy
-            
+
             docker compose up -d

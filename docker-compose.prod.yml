@@ -16,6 +16,24 @@ services:
       RIOT_URL_SUMMONER: "${RIOT_URL_SUMMONER}"
       PORT: "${APP_PORT}"
       SEASON_START_DATE: "${SEASON_START_DATE}"
+      RABBITMQ_URL: "${RABBITMQ_URL}"
+    networks:
+      - m2a_network
+    restart: always
+    depends_on:
+      - rabbitmq
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: puzzle_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: "${RABBITMQ_USER:-puzzle}"
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_PASS:-puzzle}"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
     networks:
       - m2a_network
     restart: always
@@ -23,3 +41,6 @@ services:
 networks:
   m2a_network:
     external: true
+
+volumes:
+  rabbitmq_data:

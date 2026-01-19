@@ -40,11 +40,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Start Database
-        run: docker compose up -d postgres
-        
-      - name: Wait for Postgres
-        run: sleep 5
+      - name: Start Database and RabbitMQ
+        run: docker compose up -d postgres rabbitmq
+
+      - name: Wait for services
+        run: sleep 10
 
       - name: Generate Prisma Client
         run: npx prisma generate
@@ -58,6 +58,7 @@ jobs:
           RIOT_URL_ACCOUNT: americas.api.riotgames.com
           RIOT_URL_SUMMONER: br1.api.riotgames.com
           SEASON_START_DATE: ${{ env.SEASON_START_DATE }}
+          RABBITMQ_URL: amqp://puzzle:puzzle@localhost:5672
       
       - name: Stop Containers
         if: always()
