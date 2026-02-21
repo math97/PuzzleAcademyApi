@@ -7,6 +7,7 @@ export interface MatchProps {
   gameCreation: Date;
   gameDuration: number;
   gameMode: string;
+  queueId: number;
   participants: MatchParticipant[];
 }
 
@@ -25,6 +26,10 @@ export class Match extends Entity<MatchProps> {
 
   get gameMode() {
     return this.props.gameMode;
+  }
+
+  get queueId() {
+    return this.props.queueId;
   }
 
   get participants() {

@@ -17,6 +17,7 @@ export class PrismaMatchesRepository implements MatchesRepository {
         gameCreation: match.gameCreation,
         gameDuration: match.gameDuration,
         gameMode: match.gameMode,
+        queueId: match.queueId,
         participants: {
           create: match.participants.map((participant) => ({
             id: participant.id.toString(),
@@ -55,6 +56,7 @@ export class PrismaMatchesRepository implements MatchesRepository {
         gameCreation: match.gameCreation,
         gameDuration: match.gameDuration,
         gameMode: match.gameMode,
+        queueId: match.queueId,
         participants: match.participants.map((p) =>
           MatchParticipant.create(
             {
@@ -106,6 +108,7 @@ export class PrismaMatchesRepository implements MatchesRepository {
           gameCreation: match.gameCreation,
           gameDuration: match.gameDuration,
           gameMode: match.gameMode,
+          queueId: match.queueId,
           participants: match.participants.map((mp) =>
             MatchParticipant.create(
               {

@@ -7,6 +7,7 @@ import { MatchParticipant } from '@/domain/league/enterprise/entities/match-part
 
 const RANKED_SOLO_QUEUE = 420;
 const RANKED_FLEX_QUEUE = 440;
+const RANKED_QUEUE_IDS = new Set([RANKED_SOLO_QUEUE, RANKED_FLEX_QUEUE]);
 const BATCH_SIZE = 5;
 
 async function processBatches<T, R>(
@@ -156,6 +157,7 @@ export class LoadPlayerMatchesUseCase {
           gameCreation: new Date(matchDetails.info.gameCreation),
           gameDuration: matchDetails.info.gameDuration,
           gameMode: matchDetails.info.gameMode,
+          queueId: matchDetails.info.queueId,
           participants: participantsToSave,
         });
 
@@ -179,9 +181,8 @@ export class LoadPlayerMatchesUseCase {
     );
 
     const playerStatsFromMatches = allPlayerMatches
-      .map((m) => {
-        return m.participants.find((p) => p.puuid === player.riotPuiid);
-      })
+      .filter((m) => RANKED_QUEUE_IDS.has(m.queueId))
+      .map((m) => m.participants.find((p) => p.puuid === player.riotPuiid))
       .filter((p): p is MatchParticipant => !!p);
 
     player.updateAggregatedStats(playerStatsFromMatches);
