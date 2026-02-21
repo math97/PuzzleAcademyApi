@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "matches" ADD COLUMN "queueId" INTEGER NOT NULL DEFAULT 0;

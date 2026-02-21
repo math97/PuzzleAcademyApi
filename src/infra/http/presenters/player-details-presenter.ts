@@ -5,6 +5,8 @@ import { Snapshot } from '@/domain/league/enterprise/entities/snapshot';
 
 export interface PlayerStats {
   pointsLostOrWon: number;
+  winsChange: number;
+  lossesChange: number;
 }
 
 export interface QueueStats {

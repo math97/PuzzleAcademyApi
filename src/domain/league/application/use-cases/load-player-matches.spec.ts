@@ -57,6 +57,7 @@ describe('Load Player Matches (Simple Flow)', () => {
         gameCreation: Date.now(),
         gameDuration: 1800,
         gameMode: 'CLASSIC',
+        queueId: 420,
         participants: [
           {
             puuid: 'puuid1',
@@ -113,6 +114,7 @@ describe('Load Player Matches (Simple Flow)', () => {
         gameCreation: Date.now(),
         gameDuration: 1800,
         gameMode: 'CLASSIC',
+        queueId: 420,
         participants: [
           {
             puuid: 'puuid1',
@@ -158,6 +160,7 @@ describe('Load Player Matches (Simple Flow)', () => {
         gameCreation: Date.now(),
         gameDuration: 1800,
         gameMode: 'CLASSIC',
+        queueId: 420,
         participants: [
           {
             puuid: 'puuid1',
@@ -218,6 +221,7 @@ describe('Load Player Matches (Simple Flow)', () => {
         gameCreation: new Date(),
         gameDuration: 1000,
         gameMode: 'CLASSIC',
+        queueId: 420,
         participants: [
           MatchParticipant.create({
             puuid: 'puuid1',
@@ -246,6 +250,7 @@ describe('Load Player Matches (Simple Flow)', () => {
         gameCreation: Date.now(),
         gameDuration: 1000,
         gameMode: 'CLASSIC',
+        queueId: 420,
         participants: [
           { puuid: 'puuid1', kills: 5, deaths: 1, assists: 1 },
           {
@@ -294,6 +299,7 @@ describe('Load Player Matches (Simple Flow)', () => {
         gameCreation: new Date(),
         gameDuration: 1000,
         gameMode: 'CLASSIC',
+        queueId: 420,
         participants: [
           MatchParticipant.create({
             puuid: 'puuid1',

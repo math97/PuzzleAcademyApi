@@ -44,6 +44,7 @@ model Match {
   gameCreation DateTime
   gameDuration Int
   gameMode     String
+  queueId      Int      @default(0)
 
   participants MatchParticipant[]
 

@@ -89,6 +89,8 @@ describe('[GET] /players/:id', () => {
     expect(response.body.data.solo.snapshots).toHaveLength(2);
     expect(response.body.data.solo.stats).toEqual({
       pointsLostOrWon: 20,
+      winsChange: 0,
+      lossesChange: 0,
     });
   });
 });

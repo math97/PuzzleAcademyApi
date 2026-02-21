@@ -12,6 +12,8 @@ interface GetPlayerByIdRequest {
 
 export interface PlayerStats {
   pointsLostOrWon: number;
+  winsChange: number;
+  lossesChange: number;
 }
 
 export interface QueueStats {
@@ -100,15 +102,21 @@ export class GetPlayerByIdUseCase {
 
   private calculateStats(snapshots: Snapshot[]): PlayerStats {
     let pointsLostOrWon = 0;
+    let winsChange = 0;
+    let lossesChange = 0;
 
     if (snapshots.length > 0) {
       const first = snapshots[0];
       const last = snapshots[snapshots.length - 1];
       pointsLostOrWon = last.totalPoints - first.totalPoints;
+      winsChange = last.wins - first.wins;
+      lossesChange = last.losses - first.losses;
     }
 
     return {
       pointsLostOrWon,
+      winsChange,
+      lossesChange,
     };
   }
 }
