@@ -117,4 +117,14 @@ export class PrismaPlayerRepository implements PlayersRepository {
 
     return players.map(PrismaPlayerMapper.toDomain);
   }
+
+  async findManyByIds(ids: string[]): Promise<Player[]> {
+    const players = await this.prisma.player.findMany({
+      where: {
+        id: { in: ids },
+      },
+    });
+
+    return players.map(PrismaPlayerMapper.toDomain);
+  }
 }

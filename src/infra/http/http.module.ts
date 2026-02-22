@@ -20,6 +20,8 @@ import { UpdateChampionMasteriesUseCase } from '@/domain/league/application/use-
 import { LoadPlayerMatchesController } from './controllers/load-player-matches.controller';
 import { LoadPlayerMatchesUseCase } from '@/domain/league/application/use-cases/load-player-matches';
 import { LoadBatchPlayerMatchesController } from './controllers/load-batch-player-matches.controller';
+import { FetchArenaLeaderboardController } from './controllers/fetch-arena-leaderboard.controller';
+import { FetchArenaLeaderboardUseCase } from '@/domain/league/application/use-cases/fetch-arena-leaderboard';
 
 import { EnvModule } from '../env/env.module';
 import { QueueModule } from '../queue/queue.module';
@@ -36,6 +38,7 @@ import { QueueModule } from '../queue/queue.module';
     UpdateChampionMasteriesController,
     LoadPlayerMatchesController,
     LoadBatchPlayerMatchesController,
+    FetchArenaLeaderboardController,
   ],
   providers: [
     AddPlayerUseCase,
@@ -46,6 +49,7 @@ import { QueueModule } from '../queue/queue.module';
     LoadAllPlayersStatsUseCase,
     UpdateChampionMasteriesUseCase,
     LoadPlayerMatchesUseCase,
+    FetchArenaLeaderboardUseCase,
   ],
 })
 export class HttpModule {}

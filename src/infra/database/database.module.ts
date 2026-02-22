@@ -6,6 +6,8 @@ import { SnapshotRepository } from '@/domain/league/application/repositories/sna
 import { PrismaSnapshotRepository } from './prisma/repositories/prisma-snapshot-repository';
 import { MatchesRepository } from '@/domain/league/application/repositories/matches-repository';
 import { PrismaMatchesRepository } from './prisma/repositories/prisma-matches-repository';
+import { PlayerQueueStatsRepository } from '@/domain/league/application/repositories/player-queue-stats-repository';
+import { PrismaPlayerQueueStatsRepository } from './prisma/repositories/prisma-player-queue-stats-repository';
 
 @Module({
   providers: [
@@ -22,11 +24,16 @@ import { PrismaMatchesRepository } from './prisma/repositories/prisma-matches-re
       provide: MatchesRepository,
       useClass: PrismaMatchesRepository,
     },
+    {
+      provide: PlayerQueueStatsRepository,
+      useClass: PrismaPlayerQueueStatsRepository,
+    },
   ],
   exports: [
     PlayersRepository,
     SnapshotRepository,
     MatchesRepository,
+    PlayerQueueStatsRepository,
     PrismaService,
   ],
 })

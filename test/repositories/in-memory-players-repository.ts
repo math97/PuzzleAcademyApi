@@ -72,4 +72,8 @@ export class InMemoryPlayersRepository implements PlayersRepository {
   async findManyByPuuids(puuids: string[]): Promise<Player[]> {
     return this.items.filter((item) => puuids.includes(item.riotPuiid));
   }
+
+  async findManyByIds(ids: string[]): Promise<Player[]> {
+    return this.items.filter((item) => ids.includes(item.id.toString()));
+  }
 }

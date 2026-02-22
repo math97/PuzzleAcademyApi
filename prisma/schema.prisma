@@ -34,6 +34,7 @@ model Player {
 
   snapshots     Snapshot[]
   matches       MatchParticipant[]
+  queueStats    PlayerQueueStats[]
 
   @@map("players")
 }
@@ -63,6 +64,11 @@ model MatchParticipant {
   win              Boolean
   totalDamageDealt Int
   visionScore      Int
+  placement                   Int @default(0)
+  totalDamageDealtToChampions Int @default(0)
+  totalDamageTaken            Int @default(0)
+  largestKillingSpree         Int @default(0)
+  pentaKills                  Int @default(0)
 
   match  Match   @relation(fields: [matchId], references: [id])
   player Player? @relation(fields: [puuid], references: [puuid])
@@ -70,6 +76,31 @@ model MatchParticipant {
   @@map("match_participants")
   @@index([puuid])
   @@index([matchId])
+}
+
+model PlayerQueueStats {
+  id                          String   @id @default(uuid())
+  playerId                    String
+  queueType                   String
+  totalGames                  Int      @default(0)
+  totalWins                   Int      @default(0)
+  totalTop4                   Int      @default(0)
+  avgPlacement                Float    @default(0.0)
+  totalKills                  Int      @default(0)
+  totalDeaths                 Int      @default(0)
+  totalAssists                Int      @default(0)
+  bestMatchKda                Float    @default(0.0)
+  totalDamageDealtToChampions BigInt   @default(0)
+  totalDamageTaken            BigInt   @default(0)
+  totalPentaKills             Int      @default(0)
+  bestKillingSpree            Int      @default(0)
+  updatedAt                   DateTime @updatedAt
+
+  player Player @relation(fields: [playerId], references: [id])
+
+  @@unique([playerId, queueType])
+  @@index([queueType])
+  @@map("player_queue_stats")
 }
 
 model Snapshot {

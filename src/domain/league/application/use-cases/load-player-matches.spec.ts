@@ -1,5 +1,6 @@
 import { InMemoryMatchesRepository } from 'test/repositories/in-memory-matches-repository';
 import { InMemoryPlayersRepository } from 'test/repositories/in-memory-players-repository';
+import { InMemoryPlayerQueueStatsRepository } from 'test/repositories/in-memory-player-queue-stats-repository';
 import { LoadPlayerMatchesUseCase } from './load-player-matches';
 import { RiotApiGateway } from '../gateways/riot-api-gateway';
 import { Player } from '../../enterprise/entities/player';
@@ -9,16 +10,20 @@ import { MatchParticipant } from '../../enterprise/entities/match-participant';
 
 const RANKED_SOLO_QUEUE = 420;
 const RANKED_FLEX_QUEUE = 440;
+const ARENA_QUEUE = 1700;
 
 describe('Load Player Matches (Simple Flow)', () => {
   let inMemoryPlayersRepository: InMemoryPlayersRepository;
   let inMemoryMatchesRepository: InMemoryMatchesRepository;
+  let inMemoryPlayerQueueStatsRepository: InMemoryPlayerQueueStatsRepository;
   let riotApiGateway: RiotApiGateway;
   let sut: LoadPlayerMatchesUseCase;
 
   beforeEach(() => {
     inMemoryPlayersRepository = new InMemoryPlayersRepository();
     inMemoryMatchesRepository = new InMemoryMatchesRepository();
+    inMemoryPlayerQueueStatsRepository =
+      new InMemoryPlayerQueueStatsRepository();
     riotApiGateway = {
       getSummoner: vi.fn(),
       getSummonerDetails: vi.fn(),
@@ -32,10 +37,11 @@ describe('Load Player Matches (Simple Flow)', () => {
       inMemoryPlayersRepository,
       riotApiGateway,
       inMemoryMatchesRepository,
+      inMemoryPlayerQueueStatsRepository,
     );
   });
 
-  it('should fetch matches from both ranked queues', async () => {
+  it('should fetch matches from ranked queues and arena', async () => {
     // Setup Player
     const player = Player.create(
       {
@@ -50,7 +56,8 @@ describe('Load Player Matches (Simple Flow)', () => {
     const getMatchesSpy = vi
       .fn()
       .mockResolvedValueOnce(['match1']) // Solo queue
-      .mockResolvedValueOnce(['match2']); // Flex queue
+      .mockResolvedValueOnce(['match2']) // Flex queue
+      .mockResolvedValueOnce([]); // Arena queue
     riotApiGateway.getMatchesByPuuid = getMatchesSpy;
     riotApiGateway.getMatchDetails = vi.fn().mockResolvedValue({
       info: {
@@ -76,7 +83,7 @@ describe('Load Player Matches (Simple Flow)', () => {
 
     await sut.execute({ playerId: 'player1' });
 
-    expect(getMatchesSpy).toHaveBeenCalledTimes(2);
+    expect(getMatchesSpy).toHaveBeenCalledTimes(3);
     expect(getMatchesSpy).toHaveBeenCalledWith(
       'puuid1',
       undefined,
@@ -88,6 +95,12 @@ describe('Load Player Matches (Simple Flow)', () => {
       undefined,
       undefined,
       RANKED_FLEX_QUEUE,
+    );
+    expect(getMatchesSpy).toHaveBeenCalledWith(
+      'puuid1',
+      undefined,
+      undefined,
+      ARENA_QUEUE,
     );
   });
 
@@ -107,7 +120,8 @@ describe('Load Player Matches (Simple Flow)', () => {
     riotApiGateway.getMatchesByPuuid = vi
       .fn()
       .mockResolvedValueOnce(['match1', 'match2'])
-      .mockResolvedValueOnce(['match2', 'match3']);
+      .mockResolvedValueOnce(['match2', 'match3'])
+      .mockResolvedValueOnce([]);
 
     const getDetailsSpy = vi.fn().mockResolvedValue({
       info: {
@@ -150,10 +164,11 @@ describe('Load Player Matches (Simple Flow)', () => {
     );
     await inMemoryPlayersRepository.insert(player);
 
-    // Mock Riot API - returns match1 from solo queue, empty from flex
+    // Mock Riot API - returns match1 from solo queue, empty from flex and arena
     riotApiGateway.getMatchesByPuuid = vi
       .fn()
       .mockResolvedValueOnce(['match1'])
+      .mockResolvedValueOnce([])
       .mockResolvedValueOnce([]);
     riotApiGateway.getMatchDetails = vi.fn().mockResolvedValue({
       info: {
@@ -244,6 +259,7 @@ describe('Load Player Matches (Simple Flow)', () => {
     riotApiGateway.getMatchesByPuuid = vi
       .fn()
       .mockResolvedValueOnce(['match1'])
+      .mockResolvedValueOnce([])
       .mockResolvedValueOnce([]);
     riotApiGateway.getMatchDetails = vi.fn().mockResolvedValue({
       info: {
@@ -321,6 +337,7 @@ describe('Load Player Matches (Simple Flow)', () => {
     riotApiGateway.getMatchesByPuuid = vi
       .fn()
       .mockResolvedValueOnce(['match1'])
+      .mockResolvedValueOnce([])
       .mockResolvedValueOnce([]);
 
     // Spy on getMatchDetails to ensure it's NOT called
@@ -331,5 +348,59 @@ describe('Load Player Matches (Simple Flow)', () => {
     await sut.execute({ playerId: 'player1' });
 
     expect(getDetailsSpy).not.toHaveBeenCalled();
+  });
+
+  it('should aggregate arena stats after loading arena matches', async () => {
+    const player = Player.create(
+      { name: 'ArenaPlayer', tag: 'AR1', riotPuiid: 'puuid-arena' },
+      new UniqueEntityId('player-arena'),
+    );
+    await inMemoryPlayersRepository.insert(player);
+
+    riotApiGateway.getMatchesByPuuid = vi
+      .fn()
+      .mockResolvedValueOnce([]) // Solo
+      .mockResolvedValueOnce([]) // Flex
+      .mockResolvedValueOnce(['arena-match1']); // Arena
+
+    riotApiGateway.getMatchDetails = vi.fn().mockResolvedValue({
+      info: {
+        gameCreation: Date.now(),
+        gameDuration: 900,
+        gameMode: 'CHERRY',
+        queueId: ARENA_QUEUE,
+        participants: [
+          {
+            puuid: 'puuid-arena',
+            riotIdGameName: 'ArenaPlayer',
+            championName: 'Garen',
+            kills: 6,
+            deaths: 3,
+            assists: 2,
+            win: false,
+            totalDamageDealt: 50000,
+            visionScore: 0,
+            placement: 3,
+            totalDamageDealtToChampions: 22000,
+            totalDamageTaken: 40000,
+            largestKillingSpree: 3,
+            pentaKills: 0,
+          },
+        ],
+      },
+    });
+
+    await sut.execute({ playerId: 'player-arena' });
+
+    const arenaStats =
+      await inMemoryPlayerQueueStatsRepository.findByPlayerIdAndQueueType(
+        'player-arena',
+        'ARENA',
+      );
+
+    expect(arenaStats).toBeTruthy();
+    expect(arenaStats?.totalGames).toBe(1);
+    expect(arenaStats?.avgPlacement).toBe(3);
+    expect(arenaStats?.totalKills).toBe(6);
   });
 });

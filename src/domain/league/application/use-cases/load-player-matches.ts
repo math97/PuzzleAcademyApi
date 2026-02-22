@@ -2,12 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { PlayersRepository } from '../repositories/players-repository';
 import { RiotApiGateway } from '../gateways/riot-api-gateway';
 import { MatchesRepository } from '../repositories/matches-repository';
+import { PlayerQueueStatsRepository } from '../repositories/player-queue-stats-repository';
 import { Match } from '@/domain/league/enterprise/entities/match';
 import { MatchParticipant } from '@/domain/league/enterprise/entities/match-participant';
+import { PlayerQueueStats } from '@/domain/league/enterprise/entities/player-queue-stats';
 
 const RANKED_SOLO_QUEUE = 420;
 const RANKED_FLEX_QUEUE = 440;
+const ARENA_QUEUE = 1700;
+
 const RANKED_QUEUE_IDS = new Set([RANKED_SOLO_QUEUE, RANKED_FLEX_QUEUE]);
+const ARENA_QUEUE_IDS = new Set([ARENA_QUEUE]);
+
 const BATCH_SIZE = 5;
 
 async function processBatches<T, R>(
@@ -40,6 +46,7 @@ export class LoadPlayerMatchesUseCase {
     private playersRepository: PlayersRepository,
     private riotApiGateway: RiotApiGateway,
     private matchesRepository: MatchesRepository,
+    private playerQueueStatsRepository: PlayerQueueStatsRepository,
   ) {}
 
   async execute({
@@ -53,38 +60,48 @@ export class LoadPlayerMatchesUseCase {
       throw new Error('Player not found');
     }
 
-    const [soloQueueMatchIds, flexQueueMatchIds] = await Promise.all([
-      this.riotApiGateway.getMatchesByPuuid(
-        player.riotPuiid,
-        startTime,
-        endTime,
-        RANKED_SOLO_QUEUE,
-      ),
-      this.riotApiGateway.getMatchesByPuuid(
-        player.riotPuiid,
-        startTime,
-        endTime,
-        RANKED_FLEX_QUEUE,
-      ),
-    ]);
+    const [soloQueueMatchIds, flexQueueMatchIds, arenaMatchIds] =
+      await Promise.all([
+        this.riotApiGateway.getMatchesByPuuid(
+          player.riotPuiid,
+          startTime,
+          endTime,
+          RANKED_SOLO_QUEUE,
+        ),
+        this.riotApiGateway.getMatchesByPuuid(
+          player.riotPuiid,
+          startTime,
+          endTime,
+          RANKED_FLEX_QUEUE,
+        ),
+        this.riotApiGateway.getMatchesByPuuid(
+          player.riotPuiid,
+          startTime,
+          endTime,
+          ARENA_QUEUE,
+        ),
+      ]);
 
-    const matchIds = [...new Set([...soloQueueMatchIds, ...flexQueueMatchIds])];
+    const matchIds = [
+      ...new Set([
+        ...soloQueueMatchIds,
+        ...flexQueueMatchIds,
+        ...arenaMatchIds,
+      ]),
+    ];
 
     const processMatch = async (matchId: string): Promise<Match | null> => {
       const match = await this.matchesRepository.findByRiotMatchId(matchId);
 
       if (match) {
-        // Match exists. Check if current player is participating.
         const existingParticipant = match.participants.find(
           (p) => p.puuid === player.riotPuiid,
         );
 
         if (existingParticipant) {
-          // Already processed for this player.
           return match;
         }
 
-        // Match exists but player is not linked (or we need to update).
         try {
           const matchDetails =
             await this.riotApiGateway.getMatchDetails(matchId);
@@ -98,7 +115,6 @@ export class LoadPlayerMatchesUseCase {
 
           const newParticipant = MatchParticipant.create({
             puuid: newParticipantDto.puuid,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             summonerName:
               newParticipantDto.riotIdGameName ||
               newParticipantDto.summonerName,
@@ -108,12 +124,16 @@ export class LoadPlayerMatchesUseCase {
             assists: newParticipantDto.assists,
             win: newParticipantDto.win,
             totalDamageDealt: newParticipantDto.totalDamageDealt,
-            visionScore: newParticipantDto.visionScore,
+            visionScore: newParticipantDto.visionScore ?? 0,
+            placement: newParticipantDto.placement ?? 0,
+            totalDamageDealtToChampions:
+              newParticipantDto.totalDamageDealtToChampions ?? 0,
+            totalDamageTaken: newParticipantDto.totalDamageTaken ?? 0,
+            largestKillingSpree: newParticipantDto.largestKillingSpree ?? 0,
+            pentaKills: newParticipantDto.pentaKills ?? 0,
           });
 
-          // Add to match entity
           match.addParticipant(newParticipant);
-
           await this.matchesRepository.save(match);
           return match;
         } catch (error) {
@@ -125,7 +145,6 @@ export class LoadPlayerMatchesUseCase {
         }
       }
 
-      // Match does not exist. Create it.
       try {
         const matchDetails = await this.riotApiGateway.getMatchDetails(matchId);
 
@@ -148,7 +167,13 @@ export class LoadPlayerMatchesUseCase {
             assists: participantDto.assists,
             win: participantDto.win,
             totalDamageDealt: participantDto.totalDamageDealt,
-            visionScore: participantDto.visionScore,
+            visionScore: participantDto.visionScore ?? 0,
+            placement: participantDto.placement ?? 0,
+            totalDamageDealtToChampions:
+              participantDto.totalDamageDealtToChampions ?? 0,
+            totalDamageTaken: participantDto.totalDamageTaken ?? 0,
+            largestKillingSpree: participantDto.largestKillingSpree ?? 0,
+            pentaKills: participantDto.pentaKills ?? 0,
           }),
         ];
 
@@ -180,16 +205,85 @@ export class LoadPlayerMatchesUseCase {
       player.id.toString(),
     );
 
-    const playerStatsFromMatches = allPlayerMatches
+    // Update ranked stats
+    const rankedParticipants = allPlayerMatches
       .filter((m) => RANKED_QUEUE_IDS.has(m.queueId))
       .map((m) => m.participants.find((p) => p.puuid === player.riotPuiid))
       .filter((p): p is MatchParticipant => !!p);
 
-    player.updateAggregatedStats(playerStatsFromMatches);
+    player.updateAggregatedStats(rankedParticipants);
     await this.playersRepository.save(player);
 
-    return {
-      matches,
-    };
+    // Aggregate and upsert Arena stats
+    const arenaParticipants = allPlayerMatches
+      .filter((m) => ARENA_QUEUE_IDS.has(m.queueId))
+      .map((m) => m.participants.find((p) => p.puuid === player.riotPuiid))
+      .filter((p): p is MatchParticipant => !!p);
+
+    if (arenaParticipants.length > 0) {
+      await this.upsertArenaStats(
+        player.id.toString(),
+        arenaParticipants,
+      );
+    }
+
+    return { matches };
+  }
+
+  private async upsertArenaStats(
+    playerId: string,
+    participants: MatchParticipant[],
+  ): Promise<void> {
+    const totalGames = participants.length;
+    const totalWins = participants.filter((p) => p.placement === 1).length;
+    const totalTop4 = participants.filter((p) => p.placement <= 4).length;
+    const avgPlacement =
+      participants.reduce((sum, p) => sum + p.placement, 0) / totalGames;
+    const totalKills = participants.reduce((sum, p) => sum + p.kills, 0);
+    const totalDeaths = participants.reduce((sum, p) => sum + p.deaths, 0);
+    const totalAssists = participants.reduce((sum, p) => sum + p.assists, 0);
+    const totalDamageDealtToChampions = BigInt(
+      participants.reduce(
+        (sum, p) => sum + p.totalDamageDealtToChampions,
+        0,
+      ),
+    );
+    const totalDamageTaken = BigInt(
+      participants.reduce((sum, p) => sum + p.totalDamageTaken, 0),
+    );
+    const totalPentaKills = participants.reduce(
+      (sum, p) => sum + p.pentaKills,
+      0,
+    );
+    const bestKillingSpree = participants.reduce(
+      (best, p) => Math.max(best, p.largestKillingSpree),
+      0,
+    );
+    const bestMatchKda = participants.reduce((best, p) => {
+      const kda =
+        p.deaths === 0
+          ? p.kills + p.assists
+          : (p.kills + p.assists) / p.deaths;
+      return Math.max(best, kda);
+    }, 0);
+
+    const arenaStats = PlayerQueueStats.create({
+      playerId,
+      queueType: 'ARENA',
+      totalGames,
+      totalWins,
+      totalTop4,
+      avgPlacement: Number(avgPlacement.toFixed(2)),
+      totalKills,
+      totalDeaths,
+      totalAssists,
+      bestMatchKda: Number(bestMatchKda.toFixed(2)),
+      totalDamageDealtToChampions,
+      totalDamageTaken,
+      totalPentaKills,
+      bestKillingSpree,
+    });
+
+    await this.playerQueueStatsRepository.upsert(arenaStats);
   }
 }

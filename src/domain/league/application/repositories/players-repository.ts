@@ -11,4 +11,5 @@ export abstract class PlayersRepository {
   abstract findAll(params: PaginationParams): Promise<PaginatedResult<Player>>;
   abstract findAllIds(): Promise<string[]>;
   abstract findManyByPuuids(puuids: string[]): Promise<Player[]>;
+  abstract findManyByIds(ids: string[]): Promise<Player[]>;
 }
